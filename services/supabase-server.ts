@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../types_db.ts';
+import type { Database } from '../types_db';
 
 const getServerEnv = (keys: string[]): string | undefined => {
   for (const key of keys) {

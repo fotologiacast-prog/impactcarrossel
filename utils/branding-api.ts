@@ -1,6 +1,6 @@
-import { getSupabaseServer } from '../services/supabase-server.ts';
-import type { Database, Json } from '../types_db.ts';
-import { createBrandThemeFromPreset, getBrandPaletteSwatches, resolveFontPreference } from './branding.ts';
+import { getSupabaseServer } from '../services/supabase-server';
+import type { Database, Json } from '../types_db';
+import { createBrandThemeFromPreset, getBrandPaletteSwatches, resolveFontPreference } from './branding';
 
 type ClientRow = Database['public']['Tables']['clients']['Row'];
 type ClientColorRow = Database['public']['Tables']['client_colors']['Row'];

@@ -15,7 +15,7 @@ const serializeError = (error: unknown) => {
 
 export default async function handler(req: any, res: any) {
   try {
-    const { fetchClientResponse } = await import('../../utils/branding-api.ts');
+    const { fetchClientResponse } = await import('../../utils/branding-api');
     res.status(200).json(await fetchClientResponse(String(req.query.id || '')));
   } catch (error: any) {
     console.error('Client API Error:', error);
