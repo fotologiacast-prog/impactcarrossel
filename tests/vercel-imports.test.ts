@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const testDir = path.dirname(fileURLToPath(import.meta.url));
 
 const files = [
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /api/branding.ts',
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /api/client/[id].ts',
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /utils/branding-api.ts',
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /services/supabase-server.ts',
+  '../api/branding.ts',
+  '../api/client/[id].ts',
+  '../utils/branding-api.ts',
+  '../services/supabase-server.ts',
 ];
 
 for (const file of files) {
-  const contents = readFileSync(file, 'utf8');
+  const contents = readFileSync(path.resolve(testDir, file), 'utf8');
   assert.equal(
     /\.ts['"`]/.test(contents),
     false,
@@ -18,12 +22,12 @@ for (const file of files) {
 }
 
 const apiFiles = [
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /api/branding.ts',
-  '/Users/fotologiavanassi/Documents/Impact Carrossel /api/client/[id].ts',
+  '../api/branding.ts',
+  '../api/client/[id].ts',
 ];
 
 for (const file of apiFiles) {
-  const contents = readFileSync(file, 'utf8');
+  const contents = readFileSync(path.resolve(testDir, file), 'utf8');
   assert.equal(
     /await import\(/.test(contents),
     false,

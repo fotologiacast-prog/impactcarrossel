@@ -1,24 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types_db';
 
-const getServerEnv = (keys: string[]): string | undefined => {
-  for (const key of keys) {
-    const value = process.env[key];
-    if (value) {
-      return value;
-    }
+const requireServerEnv = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required server env: ${key}`);
   }
-  return undefined;
+  return value;
 };
 
 export const getSupabaseServer = () => {
-  const supabaseUrl = getServerEnv(['SUPABASE_URL', 'VITE_SUPABASE_URL']) || 'https://dhxmlycuapmasriiufai.supabase.co';
-  const supabaseKey = getServerEnv([
-    'SUPABASE_PUBLISHABLE_KEY',
-    'SUPABASE_ANON_KEY',
-    'VITE_SUPABASE_PUBLISHABLE_KEY',
-    'VITE_SUPABASE_ANON_KEY',
-  ]) || 'sb_publishable_mq1fYF5sLgHqMtOZb9WDgQ_6of1sfPV';
+  const supabaseUrl = requireServerEnv('SUPABASE_URL');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseKey) {
+    throw new Error('Missing required server env: SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY');
+  }
 
   return createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
