@@ -1,4 +1,4 @@
-import { supabaseServer } from '../services/supabase-server.ts';
+import { getSupabaseServer } from '../services/supabase-server.ts';
 import type { Database, Json } from '../types_db.ts';
 import { createBrandThemeFromPreset, getBrandPaletteSwatches, resolveFontPreference } from './branding.ts';
 
@@ -144,6 +144,7 @@ export const buildClientResponse = (client: Pick<ClientRow, 'id' | 'name' | 'pro
 });
 
 export const fetchBrandingResponse = async (): Promise<BrandingResponse> => {
+  const supabaseServer = getSupabaseServer();
   const [{ data: clients, error: clientsError }, { data: colors, error: colorsError }, { data: assets, error: assetsError }] = await Promise.all([
     supabaseServer.from('clients').select('*'),
     supabaseServer.from('client_colors').select('*'),
@@ -168,6 +169,7 @@ export const fetchBrandingResponse = async (): Promise<BrandingResponse> => {
 };
 
 export const fetchClientResponse = async (id: string) => {
+  const supabaseServer = getSupabaseServer();
   const { data: client, error } = await supabaseServer
     .from('clients')
     .select('id, name, profile_picture, instagram')
