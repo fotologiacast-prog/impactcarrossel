@@ -233,9 +233,10 @@ export const getBrandPaletteSwatches = (
     ]);
   }
 
-  const brandTheme = createBrandThemeFromPreset(preset as BrandPresetLike);
+  const presetLike = preset as BrandPresetLike;
+  const brandTheme = createBrandThemeFromPreset(presetLike);
   return getUniqueColors([
-    ...(preset.colors || []),
+    ...(presetLike.colors || []),
     brandTheme.background,
     brandTheme.text,
     brandTheme.accent,
