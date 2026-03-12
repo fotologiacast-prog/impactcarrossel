@@ -1,0 +1,5 @@
+{
+  "name": "InstaRender Pro",
+  "description": "An internal, code-driven visual rendering engine for Instagram carousel slides, designed for precision and consistency.",
+  "requestFramePermissions": []
+}
