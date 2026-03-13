@@ -372,7 +372,7 @@ export const SlideCanvas: React.FC<{
       : 'transition-all duration-300 ease-out';
     return (
       <div className={`${className} ${imageTransitionClass}`} style={{ clipPath: imageConfig.hasTornEdges ? `url(#${maskId})` : 'none', ...extraStyle }}>
-        <img src={imageConfig.url} className={`w-full h-full ${fit === 'cover' ? 'object-cover' : 'object-contain'}`} style={{ objectPosition: `calc(50% + ${imgX}px) calc(50% + ${imgY}px)`, transform: `scale(${imgScale}) rotate(${imgRotation}deg)`, transformOrigin: 'center', opacity: opacity }} alt="" />
+        <img src={imageConfig.url} className={`block w-full h-full ${fit === 'cover' ? 'object-cover' : 'object-contain'}`} style={{ objectPosition: `calc(50% + ${imgX}px) calc(50% + ${imgY}px)`, transform: `scale(${imgScale}) rotate(${imgRotation}deg)`, transformOrigin: 'center', opacity: opacity }} alt="" />
       </div>
     );
   };
