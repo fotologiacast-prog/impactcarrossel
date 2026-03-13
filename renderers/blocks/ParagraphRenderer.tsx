@@ -3,9 +3,10 @@ import React from 'react';
 import { Block, Theme } from '../../types';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { applyWidowProtection } from '../../utils/text-layout';
 
 export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme }) {
-  const content = block.content as string;
+  const content = applyWidowProtection((block.content as string) || '');
   const hasBgHighlight = content.includes('[[');
   const fontVariant = block.options?.fontVariant || 'padrão';
 
@@ -88,7 +89,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
   return (
     <p
       className={`w-full ${theme.typography.paragraph} ${hasBgHighlight ? '!leading-[1.6]' : '!leading-[1.3]'}`}
-      style={style}
+      style={{ ...style, textWrap: 'pretty' as any }}
       data-block-type="PARAGRAPH"
     >
       {renderRichText(content)}

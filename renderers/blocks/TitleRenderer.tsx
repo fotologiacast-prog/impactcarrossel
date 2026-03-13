@@ -3,6 +3,7 @@ import React from 'react';
 import { Block, Theme } from '../../types';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { applyWidowProtection } from '../../utils/text-layout';
 
 interface TitleRendererProps {
   block: Block;
@@ -10,7 +11,8 @@ interface TitleRendererProps {
 }
 
 export function TitleRenderer({ block, theme }: TitleRendererProps) {
-  const text = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
+  const rawText = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
+  const text = applyWidowProtection(rawText);
   const highlight = block.options?.highlight;
   const size = block.options?.size || 'md';
   const variant = block.options?.variant;
@@ -138,7 +140,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   return (
     <h1 
       className={`w-full ${sizeClasses[size as keyof typeof sizeClasses]}`} 
-      style={style}
+      style={{ ...style, textWrap: 'balance' as any }}
       data-block-type="TITLE"
     >
       {renderRichText(text)}
