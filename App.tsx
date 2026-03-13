@@ -824,7 +824,7 @@ const App: React.FC = () => {
       setBrandPresets(
         [...DEFAULT_BRAND_PRESETS, ...clientPresets].map((preset) => ({
           ...preset,
-          colors: getBrandPaletteSwatches(preset),
+          colors: preset.colors || getBrandPaletteSwatches(preset),
         })),
       );
       showToast(`Carregados ${clientPresets.length} marcas e ${fetchedFonts.length} fontes!`);
