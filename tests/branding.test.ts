@@ -4,6 +4,7 @@ import {
   applyProjectClientToSlide,
   createDarkenedOverlayColor,
   createBrandThemeFromPreset,
+  getBrandPaletteSwatches,
   getDirectionalSampleRegion,
   getContrastTextColor,
   mergeSlideOptionsWithBrandTheme,
@@ -21,6 +22,7 @@ const presetTheme = createBrandThemeFromPreset({
 });
 
 assert.equal(presetTheme.paletteId, 'preset-1');
+assert.deepEqual(presetTheme.colors, ['#101010', '#F4F4F4', '#FF0055']);
 assert.equal(presetTheme.background, '#101010');
 assert.equal(presetTheme.accent, '#ff0055');
 assert.equal(presetTheme.white, '#F5F3EE');
@@ -31,6 +33,7 @@ assert.equal(presetTheme.hlTextColor, getContrastTextColor(presetTheme.hlBgColor
 
 assert.equal(getContrastTextColor('#111111'), '#F5F3EE');
 assert.equal(getContrastTextColor('#F5F5F5'), '#141414');
+assert.deepEqual(getBrandPaletteSwatches(presetTheme).slice(0, 3), ['#101010', '#F4F4F4', '#FF0055']);
 
 const mergedDark = mergeSlideOptionsWithBrandTheme(
   {

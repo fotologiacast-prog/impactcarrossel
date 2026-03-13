@@ -199,6 +199,7 @@ export const createBrandThemeFromPreset = (preset: BrandPresetLike): BrandTheme 
 
   return {
     paletteId: preset.id,
+    colors: getUniqueColors(colors),
     background,
     text,
     accent,
@@ -223,6 +224,7 @@ export const getBrandPaletteSwatches = (
   if ('paletteId' in preset || 'fontPadrão' in preset) {
     const brandTheme = preset as BrandTheme;
     return getUniqueColors([
+      ...(brandTheme.colors || []),
       brandTheme.background,
       brandTheme.text,
       brandTheme.accent,

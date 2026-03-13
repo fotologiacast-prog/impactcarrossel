@@ -156,6 +156,7 @@ export interface CustomFont {
 
 export interface BrandTheme {
   paletteId?: string;
+  colors?: string[];
   background?: string;
   text?: string;
   accent?: string;

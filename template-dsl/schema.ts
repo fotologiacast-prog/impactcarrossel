@@ -124,6 +124,7 @@ export const customFontSchema = z.object({
 
 export const brandThemeSchema = z.object({
   paletteId: z.string().optional(),
+  colors: z.array(z.string()).optional(),
   background: z.string().optional(),
   text: z.string().optional(),
   accent: z.string().optional(),

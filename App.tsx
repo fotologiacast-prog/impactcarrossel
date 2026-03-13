@@ -1390,7 +1390,7 @@ const App: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex -space-x-1.5">
-                              {getBrandPaletteSwatches(preset).slice(0, 3).map((color: string, index: number) => (
+                              {getBrandPaletteSwatches(preset).map((color: string, index: number) => (
                                 <div key={`${preset.id}-${index}`} className="w-5 h-5 rounded-full border-2 border-zinc-950" style={{ backgroundColor: color }} />
                               ))}
                             </div>
