@@ -95,6 +95,12 @@ export const SlideCanvas: React.FC<{
     imageY: number;
   } | null>(null);
   const imageBoxDraftRef = useRef<typeof imageBoxDraft>(null);
+  const imageBoxFrameRef = useRef<number | null>(null);
+  const pendingImageBoxStateRef = useRef<{
+    draft: NonNullable<typeof imageBoxDraft>;
+    guides: ImageBoxGuides | null;
+    rect: ImageBoxRect | null;
+  } | null>(null);
   const [imageBoxGuides, setImageBoxGuides] = useState<ImageBoxGuides | null>(null);
   const [imageBoxGuideRect, setImageBoxGuideRect] = useState<ImageBoxRect | null>(null);
 
@@ -144,6 +150,41 @@ export const SlideCanvas: React.FC<{
   useEffect(() => {
     imageBoxDraftRef.current = imageBoxDraft;
   }, [imageBoxDraft]);
+
+  const flushPendingImageBoxState = useCallback(() => {
+    if (imageBoxFrameRef.current !== null) {
+      window.cancelAnimationFrame(imageBoxFrameRef.current);
+      imageBoxFrameRef.current = null;
+    }
+
+    const pending = pendingImageBoxStateRef.current;
+    pendingImageBoxStateRef.current = null;
+    if (!pending) return;
+
+    setImageBoxDraft(pending.draft);
+    setImageBoxGuides(pending.guides);
+    setImageBoxGuideRect(pending.rect);
+  }, []);
+
+  const scheduleImageBoxState = useCallback((
+    draft: NonNullable<typeof imageBoxDraft>,
+    guides: ImageBoxGuides | null,
+    rect: ImageBoxRect | null,
+  ) => {
+    pendingImageBoxStateRef.current = { draft, guides, rect };
+    if (imageBoxFrameRef.current !== null) return;
+
+    imageBoxFrameRef.current = window.requestAnimationFrame(() => {
+      imageBoxFrameRef.current = null;
+      const pending = pendingImageBoxStateRef.current;
+      pendingImageBoxStateRef.current = null;
+      if (!pending) return;
+
+      setImageBoxDraft(pending.draft);
+      setImageBoxGuides(pending.guides);
+      setImageBoxGuideRect(pending.rect);
+    });
+  }, []);
 
   const updateGuidesFromRect = useCallback((rect: ImageBoxRect | null) => {
     if (!rect || imageConfig?.type !== 'IMAGE_BOX') {
@@ -296,6 +337,12 @@ export const SlideCanvas: React.FC<{
       document.removeEventListener('pointerdown', handleGlobalPointerDown, true);
     };
   }, [canvasRef, selectedImageBoxMode]);
+
+  useEffect(() => () => {
+    if (imageBoxFrameRef.current !== null) {
+      window.cancelAnimationFrame(imageBoxFrameRef.current);
+    }
+  }, []);
 
   const renderTornPaperSVG = () => {
     if (!imageConfig?.hasTornEdges) return null;
@@ -1090,11 +1137,11 @@ export const SlideCanvas: React.FC<{
 
             const baseState = getCurrentImageBoxState();
             if (selectedImageBoxMode === 'image') {
-              setImageBoxDraft({
+              scheduleImageBoxState({
                 ...baseState,
                 imageX: event.beforeTranslate[0],
                 imageY: event.beforeTranslate[1],
-              });
+              }, imageBoxGuides, imageBoxGuideRect);
               return;
             }
 
@@ -1117,15 +1164,13 @@ export const SlideCanvas: React.FC<{
               boxX: event.beforeTranslate[0] + (nextSnapLock.x ? (guides.snapX ?? 0) : 0),
               boxY: event.beforeTranslate[1] + (nextSnapLock.y ? (guides.snapY ?? 0) : 0),
             };
-            setImageBoxDraft(nextDraft);
-            setImageBoxGuides({
+            scheduleImageBoxState(nextDraft, {
               ...guides,
               isCenteredHorizontally: nextSnapLock.x,
               isCenteredVertically: nextSnapLock.y,
               hasEqualHorizontalSpacing: nextSnapLock.x,
               hasEqualVerticalSpacing: nextSnapLock.y,
-            });
-            setImageBoxGuideRect({
+            }, {
               ...nextRect,
               left: nextRect.left + (nextSnapLock.x ? (guides.snapX ?? 0) : 0),
               top: nextRect.top + (nextSnapLock.y ? (guides.snapY ?? 0) : 0),
@@ -1133,6 +1178,7 @@ export const SlideCanvas: React.FC<{
           }}
           onDragEnd={() => {
             snapLockRef.current = { x: false, y: false };
+            flushPendingImageBoxState();
             const latestDraft = imageBoxDraftRef.current;
             if (!latestDraft) return;
             commitImageBoxDraft(latestDraft);
@@ -1186,21 +1232,19 @@ export const SlideCanvas: React.FC<{
               { x: 132, y: 132 },
             );
             snapLockRef.current = nextSnapLock;
-            setImageBoxDraft({
+            scheduleImageBoxState({
               ...baseState,
               width: clampedSize.width,
               height: clampedSize.height,
               boxX: event.drag.beforeTranslate[0] + (nextSnapLock.x ? (guides.snapX ?? 0) : 0),
               boxY: event.drag.beforeTranslate[1] + (nextSnapLock.y ? (guides.snapY ?? 0) : 0),
-            });
-            setImageBoxGuides({
+            }, {
               ...guides,
               isCenteredHorizontally: nextSnapLock.x,
               isCenteredVertically: nextSnapLock.y,
               hasEqualHorizontalSpacing: nextSnapLock.x,
               hasEqualVerticalSpacing: nextSnapLock.y,
-            });
-            setImageBoxGuideRect({
+            }, {
               ...nextRect,
               left: nextRect.left + (nextSnapLock.x ? (guides.snapX ?? 0) : 0),
               top: nextRect.top + (nextSnapLock.y ? (guides.snapY ?? 0) : 0),
@@ -1208,6 +1252,7 @@ export const SlideCanvas: React.FC<{
           }}
           onResizeEnd={() => {
             snapLockRef.current = { x: false, y: false };
+            flushPendingImageBoxState();
             const latestDraft = imageBoxDraftRef.current;
             if (!latestDraft) return;
             commitImageBoxDraft(latestDraft);
