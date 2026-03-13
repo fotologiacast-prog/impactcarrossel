@@ -13,6 +13,9 @@ type FontAsset = {
   url: string;
 };
 
+const getUniqueColors = (colors: Array<string | null | undefined>) =>
+  Array.from(new Set(colors.filter((color): color is string => Boolean(color))));
+
 type BrandingResponse = {
   clients: Array<{
     id: string;
@@ -115,7 +118,10 @@ export const buildBrandingResponse = ({
     return {
       id: client.id,
       name: client.name || 'Cliente Sem Nome',
-      colors: getBrandPaletteSwatches(brandTheme),
+      colors: getUniqueColors([
+        ...paletteColors,
+        ...getBrandPaletteSwatches(brandTheme),
+      ]),
       font_padrao: fontPadrao,
       font_destaque: fontDestaque,
       profile_picture: client.profile_picture,

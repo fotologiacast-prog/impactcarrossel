@@ -20,6 +20,8 @@ const brandingPayload = buildBrandingResponse({
     { client_id: 'client-1', hex: '#111111' },
     { client_id: 'client-1', hex: '#f4f4f4' },
     { client_id: 'client-1', hex: '#0ea5e9' },
+    { client_id: 'client-1', hex: '#ff8800' },
+    { client_id: 'client-1', hex: '#22c55e' },
   ],
   assets: [
     {
@@ -55,6 +57,10 @@ assert.equal(brandingPayload.clients[0].font_destaque, 'Oswald');
 assert.equal(brandingPayload.clients[0].profile_picture, 'data:image/png;base64,abc');
 assert.equal(brandingPayload.clients[0].instagram, 'impactdoctor');
 assert.equal(brandingPayload.clients[0].defaults.text, '#F5F3EE');
+assert.deepEqual(
+  brandingPayload.clients[0].colors.slice(0, 5),
+  ['#111111', '#f4f4f4', '#0ea5e9', '#ff8800', '#22c55e'],
+);
 
 const clientResponse = buildClientResponse({
   id: 'client-2',
