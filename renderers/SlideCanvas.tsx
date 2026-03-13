@@ -94,6 +94,7 @@ export const SlideCanvas: React.FC<{
     imageX: number;
     imageY: number;
   } | null>(null);
+  const imageBoxDraftRef = useRef<typeof imageBoxDraft>(null);
   const [imageBoxGuides, setImageBoxGuides] = useState<ImageBoxGuides | null>(null);
   const [imageBoxGuideRect, setImageBoxGuideRect] = useState<ImageBoxRect | null>(null);
 
@@ -139,6 +140,10 @@ export const SlideCanvas: React.FC<{
       { path: ['image', 'imageY'], value: Math.round(draft.imageY) },
     ]);
   }, [onUpdateImage]);
+
+  useEffect(() => {
+    imageBoxDraftRef.current = imageBoxDraft;
+  }, [imageBoxDraft]);
 
   const updateGuidesFromRect = useCallback((rect: ImageBoxRect | null) => {
     if (!rect || imageConfig?.type !== 'IMAGE_BOX') {
@@ -275,10 +280,11 @@ export const SlideCanvas: React.FC<{
     if (!selectedImageBoxMode) return;
 
     const handleGlobalPointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      const clickedInsideCanvas = !!(target && canvasRef.current?.contains(target));
-      const clickedInsideImageBox = !!(target && imageBoxTargetRef.current?.contains(target));
-      const clickedMoveableControl = !!target?.closest('.moveable-control-box');
+      const target = event.target;
+      const targetElement = target instanceof Element ? target : null;
+      const clickedInsideCanvas = !!(targetElement && canvasRef.current?.contains(targetElement));
+      const clickedInsideImageBox = !!(targetElement && imageBoxTargetRef.current?.contains(targetElement));
+      const clickedMoveableControl = !!targetElement?.closest('.moveable-control-box');
 
       if (!clickedInsideCanvas && !clickedInsideImageBox && !clickedMoveableControl) {
         setSelectedImageBoxMode(null);
@@ -1062,6 +1068,7 @@ export const SlideCanvas: React.FC<{
           edge={false}
           onDragStart={(event: any) => {
             const currentState = getCurrentImageBoxState();
+            if (!(event.target instanceof Element)) return;
             const targetBounds = event.target.getBoundingClientRect();
             const canvasBounds = canvasRef.current?.getBoundingClientRect();
             if (!canvasBounds) return;
@@ -1126,11 +1133,13 @@ export const SlideCanvas: React.FC<{
           }}
           onDragEnd={() => {
             snapLockRef.current = { x: false, y: false };
-            if (!imageBoxDraft) return;
-            commitImageBoxDraft(imageBoxDraft);
+            const latestDraft = imageBoxDraftRef.current;
+            if (!latestDraft) return;
+            commitImageBoxDraft(latestDraft);
           }}
           onResizeStart={(event: any) => {
             const currentState = getCurrentImageBoxState();
+            if (!(event.target instanceof Element)) return;
             const targetBounds = event.target.getBoundingClientRect();
             const canvasBounds = canvasRef.current?.getBoundingClientRect();
             if (!canvasBounds) return;
@@ -1199,8 +1208,9 @@ export const SlideCanvas: React.FC<{
           }}
           onResizeEnd={() => {
             snapLockRef.current = { x: false, y: false };
-            if (!imageBoxDraft) return;
-            commitImageBoxDraft(imageBoxDraft);
+            const latestDraft = imageBoxDraftRef.current;
+            if (!latestDraft) return;
+            commitImageBoxDraft(latestDraft);
           }}
         />
       )}

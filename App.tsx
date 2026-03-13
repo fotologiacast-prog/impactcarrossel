@@ -987,6 +987,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!carousel || !canvasRef.current || !currentSlide) return;
+    if (selectedCanvasObject?.type === 'IMAGE_BOX') return;
 
     const frame = window.requestAnimationFrame(() => {
       setDslInput((prev) => {
@@ -1031,7 +1032,7 @@ const App: React.FC = () => {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [carousel, currentIndex, currentSlide, currentSlideTheme.fontPadrão, currentSlideTheme.fontDestaque, currentSlideTheme.background, currentSlideTheme.text, currentSlideTheme.accent]);
+  }, [carousel, currentIndex, currentSlide, currentSlideTheme.fontPadrão, currentSlideTheme.fontDestaque, currentSlideTheme.background, currentSlideTheme.text, currentSlideTheme.accent, selectedCanvasObject]);
 
 
 
