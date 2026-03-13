@@ -1727,6 +1727,7 @@ const App: React.FC = () => {
                           <p className="text-[9px] text-zinc-500 uppercase tracking-widest pl-6">Ajustes de cor para textos e acentos do slide</p>
                         </div>
                         <div className="grid grid-cols-1 gap-6">
+                          <ColorPropertyControl label="Fundo do Slide" value={currentSlideTheme.background || '#0D0D0D'} paletteColors={activePaletteColors} onChange={(val) => updateSlideProperty(['options', 'background'], val)} />
                           <ColorPropertyControl label="Texto Principal" value={currentSlideTheme.text || '#FFFFFF'} paletteColors={activePaletteColors} onChange={(val) => updateSlideProperty(['options', 'text'], val)} />
                           <ColorPropertyControl label="Cor de Acento" value={currentSlideTheme.accent || '#1fb2f7'} paletteColors={activePaletteColors} onChange={(val) => updateSlideProperty(['options', 'accent'], val)} />
                           <ColorPropertyControl label="Texto Highlight" value={currentSlideTheme.hlTextColor || '#000000'} paletteColors={activePaletteColors} onChange={(val) => updateSlideProperty(['options', 'hlTextColor'], val)} />
