@@ -3,9 +3,11 @@ import React from 'react';
 import { Block, Theme } from '../../types';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
 
 export function BadgeRenderer({ block, theme }: { block: Block; theme: Theme }) {
-  const text = block.content as string;
+  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
+  const text = formatTextForRender((block.content as string) || '', lineBreakMode);
   const highlight = block.options?.highlight;
   const hasBgHighlight = text.includes('[[');
   const opacity = theme.colors.cardOpacity !== undefined ? theme.colors.cardOpacity : 1;
@@ -91,7 +93,8 @@ export function BadgeRenderer({ block, theme }: { block: Block; theme: Theme }) 
         backgroundColor: theme.colors.cardBg || theme.colors.highlight, 
         opacity: opacity,
         color: textColor,
-        textWrap: 'balance' as any,
+        whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal',
+        textWrap: lineBreakMode === 'manual' ? undefined : 'balance' as any,
         maxWidth: '100%',
         fontFamily: safeFontFamily,
         fontWeight: fontVariant === 'destaque' ? 400 : 300

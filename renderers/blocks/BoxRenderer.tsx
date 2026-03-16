@@ -4,6 +4,7 @@ import { Block, Theme } from '../../types';
 import * as Icons from 'lucide-react';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
 
 interface BoxRendererProps {
   block: Block;
@@ -16,7 +17,8 @@ interface BoxRendererProps {
 }
 
 export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, totalInGroup = 1, groupLayout = 'auto', onEditIcon }: BoxRendererProps) {
-  const text = (block.content || '') as string;
+  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
+  const text = formatTextForRender(((block.content || '') as string), lineBreakMode);
   const iconName = block.options?.icon;
   const customIcon = block.options?.customIcon;
   const variant = block.options?.variant || 'default';
@@ -148,7 +150,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         </div>
         <div 
           className={`${hasBgHighlight ? '!leading-[1.5]' : '!leading-[1.2]'} tracking-tight font-black ${align === 'center' ? 'mt-4' : ''}`}
-          style={{ fontSize: computedFontSize }}
+          style={{ fontSize: computedFontSize, whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal', textWrap: lineBreakMode === 'manual' ? undefined : 'pretty' }}
         >
           {renderRichText(text)}
         </div>

@@ -133,6 +133,13 @@ const normalizeRenderedText = (value: string) =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+const supportsManualLineBreakControl = (block: Block) =>
+  block.type === 'TITLE'
+  || block.type === 'PARAGRAPH'
+  || block.type === 'CARD'
+  || block.type === 'BADGE'
+  || block.type === 'BOX';
+
 const getEffectiveBlockFontSize = (block: Block, allBlocks?: Block[]) => {
   if (typeof block.options?.fontSize === 'number' && !Number.isNaN(block.options.fontSize)) {
     return block.options.fontSize;
@@ -1009,6 +1016,7 @@ const App: React.FC = () => {
             const block = slide.blocks[blockIndex];
             if (!block) return;
             if (block.type !== 'TITLE' && block.type !== 'PARAGRAPH') return;
+            if (block.options?.lineBreakMode === 'manual') return;
             if (typeof block.content !== 'string') return;
             if (block.content.includes('[[') || block.content.includes('**')) return;
 
@@ -1655,7 +1663,22 @@ const App: React.FC = () => {
                                 <div className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5"><span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest px-1">Cor do @</span><input type="color" value={block.options?.handleColor || '#1fb2f7'} onChange={(e) => updateSlideProperty(['blocks', bIdx, 'options', 'handleColor'], e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-none p-0 overflow-hidden" /></div>
                               </div>
                             ) : block.type !== 'SPACER' ? (
-                              <SafeTextArea value={(Array.isArray(block.content) ? block.content.join('\n') : block.content as string) || ''} onChange={(val) => updateSlideProperty(['blocks', bIdx, 'content'], block.type === 'LIST' ? val.split('\n') : val)} className="w-full bg-black/60 border border-white/5 rounded-2xl p-5 text-[13px] font-medium text-white outline-none focus:border-brand/50 min-h-[120px] custom-scrollbar resize-none transition-all" placeholder="Digite o conteúdo do slide aqui..." />
+                              <>
+                                <SafeTextArea value={(Array.isArray(block.content) ? block.content.join('\n') : block.content as string) || ''} onChange={(val) => updateSlideProperty(['blocks', bIdx, 'content'], block.type === 'LIST' ? val.split('\n') : val)} className="w-full bg-black/60 border border-white/5 rounded-2xl p-5 text-[13px] font-medium text-white outline-none focus:border-brand/50 min-h-[120px] custom-scrollbar resize-none transition-all" placeholder="Digite o conteúdo do slide aqui..." />
+                                {supportsManualLineBreakControl(block) && (
+                                  <div className="space-y-2">
+                                    <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Quebra de Linha</span>
+                                    <select
+                                      value={block.options?.lineBreakMode || 'auto'}
+                                      onChange={(e) => updateSlideProperty(['blocks', bIdx, 'options', 'lineBreakMode'], e.target.value)}
+                                      className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none appearance-none cursor-pointer"
+                                    >
+                                      <option value="auto">Automática</option>
+                                      <option value="manual">Manual</option>
+                                    </select>
+                                  </div>
+                                )}
+                              </>
                             ) : null}
                             
                             {block.type !== 'SPACER' && (

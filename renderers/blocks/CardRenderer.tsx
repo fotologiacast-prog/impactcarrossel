@@ -4,6 +4,7 @@ import { Block, Theme } from '../../types';
 import * as Icons from 'lucide-react';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
 
 interface CardRendererProps {
   block: Block;
@@ -14,7 +15,8 @@ interface CardRendererProps {
 export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
   const customIcon = block.options?.customIcon;
   const iconName = block.options?.icon;
-  const text = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
+  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
+  const text = formatTextForRender(Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string, lineBreakMode);
   const highlight = block.options?.highlight;
   const variant = block.options?.variant || 'default';
   const hasBgHighlight = text.includes('[[');
@@ -110,7 +112,9 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
         className={`flex-1 ${hasBgHighlight ? '!leading-[1.7]' : '!leading-[1.3]'} tracking-tight`} 
         style={{ 
           fontWeight: fontVariant === 'destaque' ? 400 : 300,
-          fontSize: block.options?.fontSize ? `${block.options.fontSize}px` : '30px'
+          fontSize: block.options?.fontSize ? `${block.options.fontSize}px` : '30px',
+          whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal',
+          textWrap: lineBreakMode === 'manual' ? undefined : 'pretty'
         }}
       >
         {renderRichContent()}

@@ -5,6 +5,7 @@ export interface Block {
   type: BlockType;
   content?: string | string[];
   options?: {
+    lineBreakMode?: 'auto' | 'manual';
     highlight?: string;
     variant?: 'default' | 'accent' | 'muted' | 'box' | 'ghost' | 'outlined' | 'pill' | 'oval' | 'check-list' | 'twitter-post';
     size?: 'sm' | 'md' | 'lg';

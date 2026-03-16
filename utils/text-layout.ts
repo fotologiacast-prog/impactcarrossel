@@ -11,3 +11,9 @@ export const applyWidowProtection = (value: string): string =>
       return trimmed.replace(/\s+(\S+)$/, '\u00A0$1');
     })
     .join('\n');
+
+export const resolveLineBreakMode = (value?: string | null): 'auto' | 'manual' =>
+  value === 'manual' ? 'manual' : 'auto';
+
+export const formatTextForRender = (value: string, mode?: string | null): string =>
+  resolveLineBreakMode(mode) === 'manual' ? value : applyWidowProtection(value);

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { applyWidowProtection } from '../utils/text-layout.ts';
+import { applyWidowProtection, formatTextForRender, resolveLineBreakMode } from '../utils/text-layout.ts';
 
 assert.equal(
   applyWidowProtection('O tratamento começa com'),
@@ -20,5 +20,10 @@ assert.equal(
   applyWidowProtection('Seu [[corpo]] avisa'),
   'Seu [[corpo]]\u00A0avisa',
 );
+
+assert.equal(resolveLineBreakMode(undefined), 'auto');
+assert.equal(resolveLineBreakMode('manual'), 'manual');
+assert.equal(formatTextForRender('Seu corpo avisa', 'auto'), 'Seu corpo\u00A0avisa');
+assert.equal(formatTextForRender('Seu corpo\navisa', 'manual'), 'Seu corpo\navisa');
 
 console.log('text-layout.test.ts passed');

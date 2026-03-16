@@ -5,6 +5,7 @@ export const blockSchema = z.object({
   type: z.enum(['TITLE', 'LIST', 'IMAGE', 'SPACER', 'PARAGRAPH', 'CARD', 'BADGE', 'BOX', 'USER']),
   content: z.union([z.string(), z.array(z.string())]).optional(),
   options: z.object({
+    lineBreakMode: z.enum(['auto', 'manual']).optional(),
     highlight: z.string().optional(),
     variant: z.enum(['default', 'accent', 'muted', 'box', 'ghost', 'outlined', 'pill', 'oval', 'check-list', 'twitter-post']).optional(),
     size: z.enum(['sm', 'md', 'lg']).optional(),

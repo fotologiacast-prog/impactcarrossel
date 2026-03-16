@@ -3,7 +3,7 @@ import React from 'react';
 import { Block, Theme } from '../../types';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
-import { applyWidowProtection } from '../../utils/text-layout';
+import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
 
 interface TitleRendererProps {
   block: Block;
@@ -11,8 +11,9 @@ interface TitleRendererProps {
 }
 
 export function TitleRenderer({ block, theme }: TitleRendererProps) {
+  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
   const rawText = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
-  const text = applyWidowProtection(rawText);
+  const text = formatTextForRender(rawText, lineBreakMode);
   const highlight = block.options?.highlight;
   const size = block.options?.size || 'md';
   const variant = block.options?.variant;
@@ -128,7 +129,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
            <div className="absolute inset-0 border-[10px] rounded-[100%] border-white opacity-20 transform scale-[1.3] scale-y-[0.8]" />
            <h1 
               className={`w-full ${sizeClasses[size as keyof typeof sizeClasses]} uppercase relative z-10 italic`} 
-              style={{ ...style, textAlign: 'center' }}
+              style={{ ...style, textAlign: 'center', whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal', textWrap: lineBreakMode === 'manual' ? undefined : 'balance' as any }}
               data-block-type="TITLE"
             >
               {renderRichText(text)}
@@ -140,7 +141,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   return (
     <h1 
       className={`w-full ${sizeClasses[size as keyof typeof sizeClasses]}`} 
-      style={{ ...style, textWrap: 'balance' as any }}
+      style={{ ...style, whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal', textWrap: lineBreakMode === 'manual' ? undefined : 'balance' as any }}
       data-block-type="TITLE"
     >
       {renderRichText(text)}
