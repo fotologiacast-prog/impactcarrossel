@@ -21,6 +21,20 @@ const presetTheme = createBrandThemeFromPreset({
   font_destaque: 'Playfair Display',
 });
 
+const resolvedPresetTheme = createBrandThemeFromPreset(
+  {
+    id: 'preset-2',
+    name: 'Cliente B',
+    colors: ['#101010', '#F4F4F4', '#ff0055'],
+    font_padrao: 'Merriweather',
+    font_destaque: 'Oswald',
+  },
+  [
+    { family: 'Merriweather Regular', name: 'Merriweather Regular' },
+    { family: 'Oswald', name: 'Oswald' },
+  ],
+);
+
 assert.equal(presetTheme.paletteId, 'preset-1');
 assert.deepEqual(presetTheme.colors, ['#101010', '#F4F4F4', '#FF0055']);
 assert.equal(presetTheme.background, '#101010');
@@ -30,6 +44,8 @@ assert.equal(presetTheme.black, '#141414');
 assert.equal(presetTheme.text, '#F5F3EE');
 assert.equal(presetTheme.cardTextColor, getContrastTextColor(presetTheme.cardBg));
 assert.equal(presetTheme.hlTextColor, getContrastTextColor(presetTheme.hlBgColor));
+assert.equal(resolvedPresetTheme.fontPadrão, 'Merriweather Regular');
+assert.equal(resolvedPresetTheme.fontDestaque, 'Oswald');
 
 assert.equal(getContrastTextColor('#111111'), '#F5F3EE');
 assert.equal(getContrastTextColor('#F5F5F5'), '#141414');

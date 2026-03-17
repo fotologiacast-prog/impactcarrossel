@@ -1080,7 +1080,9 @@ const App: React.FC = () => {
   const handleApplyPalettePreset = (preset: any) => {
     setActivePaletteId(preset.id);
     setBrandSearchQuery('');
-    updateGlobalProperty(['brandTheme'], createBrandThemeFromPreset(preset));
+    updateGlobalProperty([
+      'brandTheme',
+    ], createBrandThemeFromPreset(preset, [...(carousel?.customFonts || []), ...clientFonts]));
   };
 
   const handleCreatePalette = async () => {

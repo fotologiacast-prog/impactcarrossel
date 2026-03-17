@@ -186,7 +186,10 @@ const getUniqueColors = (colors: Array<string | undefined | null>): string[] => 
   return result;
 };
 
-export const createBrandThemeFromPreset = (preset: BrandPresetLike): BrandTheme => {
+export const createBrandThemeFromPreset = (
+  preset: BrandPresetLike,
+  fonts: Array<Pick<CustomFont, 'family' | 'name'>> = [],
+): BrandTheme => {
   const colors = preset.colors || [];
   const white = DEFAULT_WHITE;
   const black = DEFAULT_BLACK;
@@ -207,8 +210,8 @@ export const createBrandThemeFromPreset = (preset: BrandPresetLike): BrandTheme 
     cardTextColor: getContrastTextColor(cardBg, white, black),
     hlBgColor,
     hlTextColor: getContrastTextColor(hlBgColor, white, black),
-    fontPadrão: preset.font_padrao || DEFAULT_PRIMARY_FONT,
-    fontDestaque: preset.font_destaque || DEFAULT_SECONDARY_FONT,
+    fontPadrão: resolveFontPreference(preset.font_padrao || DEFAULT_PRIMARY_FONT, fonts),
+    fontDestaque: resolveFontPreference(preset.font_destaque || DEFAULT_SECONDARY_FONT, fonts),
     white,
     black,
   };

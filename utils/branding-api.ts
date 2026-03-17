@@ -113,7 +113,7 @@ export const buildBrandingResponse = ({
       colors: paletteColors,
       font_padrao: fontPadrao,
       font_destaque: fontDestaque,
-    });
+    }, fetchedFonts);
 
     return {
       id: client.id,
