@@ -31,8 +31,8 @@ export const getProfileFocusVisualStyles = ({
     WebkitBackdropFilter: `blur(${14 + blur * 0.7}px) saturate(142%)`,
   },
   shadow: {
-    background: 'rgba(0,0,0,0.24)',
-    filter: 'blur(54px)',
+    background: 'transparent',
+    boxShadow: `0 ${Math.round(24 + blur * 0.7)}px ${Math.round(72 + blur * 1.5)}px rgba(0,0,0,0.34), 0 ${Math.round(12 + blur * 0.35)}px ${Math.round(30 + blur * 0.7)}px rgba(0,0,0,0.22)`,
     opacity: 0.34,
     transform: 'translateY(24px) scale(0.94)',
   },
