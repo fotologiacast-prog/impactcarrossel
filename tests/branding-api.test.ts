@@ -15,6 +15,18 @@ const brandingPayload = buildBrandingResponse({
         font_destaque: 'Oswald',
       },
     },
+    {
+      id: 'client-2',
+      name: 'Clinica Camel',
+      profile_picture: null,
+      instagram: 'clinicacamel',
+      preferences: {
+        fontPadrao: 'Merriweather',
+      },
+      image_settings: {
+        fontDestaque: 'Oswald',
+      },
+    },
   ],
   colors: [
     { client_id: 'client-1', hex: '#111111' },
@@ -22,6 +34,9 @@ const brandingPayload = buildBrandingResponse({
     { client_id: 'client-1', hex: '#0ea5e9' },
     { client_id: 'client-1', hex: '#ff8800' },
     { client_id: 'client-1', hex: '#22c55e' },
+    { client_id: 'client-2', hex: '#222222' },
+    { client_id: 'client-2', hex: '#eeeeee' },
+    { client_id: 'client-2', hex: '#7c3aed' },
   ],
   assets: [
     {
@@ -48,7 +63,7 @@ const brandingPayload = buildBrandingResponse({
   ],
 });
 
-assert.equal(brandingPayload.clients.length, 1);
+assert.equal(brandingPayload.clients.length, 2);
 assert.equal(brandingPayload.fonts.length, 2);
 assert.equal(brandingPayload.fonts[0].family, 'Merriweather Regular');
 assert.equal(brandingPayload.fonts[1].family, 'Oswald');
@@ -61,6 +76,8 @@ assert.deepEqual(
   brandingPayload.clients[0].colors.slice(0, 5),
   ['#111111', '#f4f4f4', '#0ea5e9', '#ff8800', '#22c55e'],
 );
+assert.equal(brandingPayload.clients[1].font_padrao, 'Merriweather Regular');
+assert.equal(brandingPayload.clients[1].font_destaque, 'Oswald');
 
 const clientResponse = buildClientResponse({
   id: 'client-2',

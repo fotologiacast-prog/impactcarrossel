@@ -44,6 +44,20 @@ const readJsonObject = (value: Json | null | undefined): Record<string, unknown>
   return value as Record<string, unknown>;
 };
 
+const readStringPreference = (
+  source: Record<string, unknown>,
+  keys: string[],
+): string | undefined => {
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return undefined;
+};
+
 const isFontAsset = (asset: ClientAssetRow): boolean => {
   const category = (asset.category || '').toLowerCase();
   const name = (asset.name || '').toLowerCase();
@@ -99,11 +113,15 @@ export const buildBrandingResponse = ({
     const settings = readJsonObject(client.image_settings);
 
     const fontPadrao = resolveFontPreference(
-      String(prefs.font_padrao || settings.font_padrao || 'Inter'),
+      readStringPreference(prefs, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
+        || readStringPreference(settings, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
+        || 'Inter',
       fetchedFonts,
     );
     const fontDestaque = resolveFontPreference(
-      String(prefs.font_destaque || settings.font_destaque || 'Instrument Serif'),
+      readStringPreference(prefs, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
+        || readStringPreference(settings, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
+        || 'Instrument Serif',
       fetchedFonts,
     );
 
