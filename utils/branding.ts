@@ -293,6 +293,37 @@ export const mergeSlideOptionsWithBrandTheme = (
   };
 };
 
+export const applyBrandThemeToSlides = (
+  slides: SlideDefinition[],
+  previousTheme?: Pick<BrandTheme, 'fontPadrão' | 'fontDestaque'> | null,
+): SlideDefinition[] =>
+  slides.map((slide) => {
+    if (!slide.options) return slide;
+
+    const nextOptions = { ...slide.options };
+    let changed = false;
+
+    const inheritedPrimary = normalizeFontFamilyName(previousTheme?.fontPadrão || DEFAULT_PRIMARY_FONT);
+    const inheritedSecondary = normalizeFontFamilyName(previousTheme?.fontDestaque || DEFAULT_SECONDARY_FONT);
+
+    if (isNonEmptyString(nextOptions.fontPadrão) && normalizeFontFamilyName(nextOptions.fontPadrão) === inheritedPrimary) {
+      delete nextOptions.fontPadrão;
+      changed = true;
+    }
+
+    if (isNonEmptyString(nextOptions.fontDestaque) && normalizeFontFamilyName(nextOptions.fontDestaque) === inheritedSecondary) {
+      delete nextOptions.fontDestaque;
+      changed = true;
+    }
+
+    if (!changed) return slide;
+
+    return {
+      ...slide,
+      options: nextOptions,
+    };
+  });
+
 const formatInstagramHandle = (value?: string | null): string | undefined => {
   if (!isNonEmptyString(value)) return undefined;
   const normalized = value.trim().replace(/^@+/, '');

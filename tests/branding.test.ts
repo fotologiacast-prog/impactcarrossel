@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { carouselSchema } from '../template-dsl/schema.ts';
 import {
   applyProjectClientToSlide,
+  applyBrandThemeToSlides,
   createDarkenedOverlayColor,
   createBrandThemeFromPreset,
   getBrandPaletteSwatches,
@@ -158,6 +159,40 @@ assert.equal(clientSyncedSlide.blocks[0].type, 'USER');
 assert.equal(clientSyncedSlide.blocks[0].content, 'Impact Doctor');
 assert.equal(clientSyncedSlide.blocks[0].options?.handle, '@impactdoctor');
 assert.equal(clientSyncedSlide.blocks[0].options?.avatar, 'https://example.com/new.jpg');
+
+const migratedSlides = applyBrandThemeToSlides(
+  [
+    {
+      template: 'DEFAULT',
+      blocks: [],
+      options: {
+        fontPadrão: 'Inter',
+        fontDestaque: 'Instrument Serif',
+      },
+    },
+    {
+      template: 'DEFAULT',
+      blocks: [],
+      options: {
+        fontPadrão: 'Playfair Display',
+      },
+    },
+    {
+      template: 'DEFAULT',
+      blocks: [],
+      options: {},
+    },
+  ],
+  {
+    fontPadrão: 'Inter',
+    fontDestaque: 'Instrument Serif',
+  },
+);
+
+assert.equal(migratedSlides[0].options?.fontPadrão, undefined);
+assert.equal(migratedSlides[0].options?.fontDestaque, undefined);
+assert.equal(migratedSlides[1].options?.fontPadrão, 'Playfair Display');
+assert.equal(migratedSlides[2].options?.fontPadrão, undefined);
 
 console.log('branding.test.ts passed');
 

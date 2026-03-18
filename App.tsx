@@ -7,6 +7,7 @@ import { templateRegistry } from './domain/templates/TemplateRegistry';
 import { TOKENS } from './design-tokens/tokens';
 import { TemplateDefinition, Block, Project, CustomFont, OverlayImageConfig } from './types';
 import {
+  applyBrandThemeToSlides,
   applyProjectClientToSlide,
   createBrandThemeFromPreset,
   getBrandPaletteSwatches,
@@ -1080,9 +1081,22 @@ const App: React.FC = () => {
   const handleApplyPalettePreset = (preset: any) => {
     setActivePaletteId(preset.id);
     setBrandSearchQuery('');
-    updateGlobalProperty([
-      'brandTheme',
-    ], createBrandThemeFromPreset(preset, [...(carousel?.customFonts || []), ...clientFonts]));
+    setDslInput((prev) => {
+      try {
+        const parsed = JSON.parse(prev);
+        const previousTheme = parsed.brandTheme || null;
+        const nextTheme = createBrandThemeFromPreset(preset, [...(carousel?.customFonts || []), ...clientFonts]);
+
+        parsed.brandTheme = nextTheme;
+        if (Array.isArray(parsed.slides)) {
+          parsed.slides = applyBrandThemeToSlides(parsed.slides, previousTheme);
+        }
+
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        return prev;
+      }
+    });
   };
 
   const handleCreatePalette = async () => {
