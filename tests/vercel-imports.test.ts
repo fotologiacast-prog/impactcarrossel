@@ -35,4 +35,11 @@ for (const file of apiFiles) {
   );
 }
 
+const brandingApiContents = readFileSync(path.resolve(testDir, '../api/branding.ts'), 'utf8');
+assert.equal(
+  /from ['"]\.\.\/utils\/branding-api['"]/.test(brandingApiContents),
+  false,
+  '../api/branding.ts still imports ../utils/branding-api, which has been fragile in Vercel serverless bundling.',
+);
+
 console.log('vercel-imports.test.ts passed');
