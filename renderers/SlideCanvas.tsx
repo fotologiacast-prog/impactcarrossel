@@ -938,16 +938,16 @@ export const SlideCanvas: React.FC<{
             </div>
           )}
           <div className="relative z-10 h-full w-full flex flex-col justify-center items-start" style={{ padding: canvasPadding }}>
-            <div
-              className={`w-full max-w-[840px] mx-auto flex flex-col justify-center min-h-0 ${isSocialPost ? 'border border-white/10 rounded-[40px] p-16 bg-white/5' : ''} ${isProfileMode ? 'relative overflow-hidden rounded-[56px] p-16' : ''}`}
-              style={isProfileMode ? profileShellStyle : socialShellStyle}
-            >
-              {isProfileMode && (
-                <>
-                  <div
-                    className="absolute inset-[16px] rounded-[56px] pointer-events-none"
-                    style={profileFocusVisualStyles?.shadow}
-                  />
+            {isProfileMode ? (
+              <div className="relative w-full max-w-[840px] mx-auto">
+                <div
+                  className="absolute inset-[16px] rounded-[56px] pointer-events-none"
+                  style={profileFocusVisualStyles?.shadow}
+                />
+                <div
+                  className="relative overflow-hidden rounded-[56px] p-16 flex flex-col justify-center min-h-0"
+                  style={profileShellStyle}
+                >
                   <div
                     className="absolute inset-0 pointer-events-none"
                     style={{
@@ -959,10 +959,17 @@ export const SlideCanvas: React.FC<{
                     className="absolute inset-[1px] rounded-[54px] pointer-events-none"
                     style={{ border: '1px solid rgba(255,255,255,0.12)' }}
                   />
-                </>
-              )}
-              {renderBlocks()}
-            </div>
+                  {renderBlocks()}
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`w-full max-w-[840px] mx-auto flex flex-col justify-center min-h-0 ${isSocialPost ? 'border border-white/10 rounded-[40px] p-16 bg-white/5' : ''}`}
+                style={socialShellStyle}
+              >
+                {renderBlocks()}
+              </div>
+            )}
           </div>
         </div>
       );

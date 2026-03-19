@@ -275,6 +275,12 @@ export const mergeSlideOptionsWithBrandTheme = (
   const text = merged.text || getContrastTextColor(background, white, black);
   const cardBg = merged.cardBg || accent;
   const hlBgColor = merged.hlBgColor || accent;
+  const inheritedPrimaryFont = isNonEmptyString(slideOptions?.fontPadrão)
+    ? slideOptions?.fontPadrão
+    : brandTheme?.fontPadrão;
+  const inheritedSecondaryFont = isNonEmptyString(slideOptions?.fontDestaque)
+    ? slideOptions?.fontDestaque
+    : brandTheme?.fontDestaque;
 
   return {
     ...merged,
@@ -285,8 +291,8 @@ export const mergeSlideOptionsWithBrandTheme = (
     cardTextColor: merged.cardTextColor || getContrastTextColor(cardBg, white, black),
     hlBgColor,
     hlTextColor: merged.hlTextColor || getContrastTextColor(hlBgColor, white, black),
-    fontPadrão: merged.fontPadrão || DEFAULT_PRIMARY_FONT,
-    fontDestaque: merged.fontDestaque || DEFAULT_SECONDARY_FONT,
+    fontPadrão: inheritedPrimaryFont || DEFAULT_PRIMARY_FONT,
+    fontDestaque: inheritedSecondaryFont || DEFAULT_SECONDARY_FONT,
     backgroundOverlayColor: merged.backgroundOverlayColor || black,
     white,
     black,
@@ -310,8 +316,16 @@ export const applyBrandThemeToSlides = (
       delete nextOptions.fontPadrão;
       changed = true;
     }
+    if (!isNonEmptyString(nextOptions.fontPadrão) && 'fontPadrão' in nextOptions) {
+      delete nextOptions.fontPadrão;
+      changed = true;
+    }
 
     if (isNonEmptyString(nextOptions.fontDestaque) && normalizeFontFamilyName(nextOptions.fontDestaque) === inheritedSecondary) {
+      delete nextOptions.fontDestaque;
+      changed = true;
+    }
+    if (!isNonEmptyString(nextOptions.fontDestaque) && 'fontDestaque' in nextOptions) {
       delete nextOptions.fontDestaque;
       changed = true;
     }

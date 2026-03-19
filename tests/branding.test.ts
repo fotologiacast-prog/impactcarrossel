@@ -93,6 +93,20 @@ assert.equal(mergedWithOverrides.cardBg, '#00ffaa');
 assert.equal(mergedWithOverrides.postFX?.noiseAmount, 0.3);
 assert.equal(mergedWithOverrides.postFX?.vignette, 0.1);
 
+const mergedWithEmptyFontOverride = mergeSlideOptionsWithBrandTheme(
+  {
+    fontPadrão: 'Merriweather Regular',
+    fontDestaque: 'Oswald',
+  },
+  {
+    fontPadrão: '',
+    fontDestaque: '   ',
+  },
+);
+
+assert.equal(mergedWithEmptyFontOverride.fontPadrão, 'Merriweather Regular');
+assert.equal(mergedWithEmptyFontOverride.fontDestaque, 'Oswald');
+
 assert.equal(normalizeFontFamilyName(' Playfair-Display '), 'playfairdisplay');
 assert.equal(
   resolveFontPreference('Playfair Display', [
