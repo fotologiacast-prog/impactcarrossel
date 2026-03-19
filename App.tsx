@@ -347,6 +347,7 @@ const App: React.FC = () => {
   const [showPasteTargetModal, setShowPasteTargetModal] = useState(false);
   const [pendingPastedImage, setPendingPastedImage] = useState<string | null>(null);
   const [selectedCanvasObject, setSelectedCanvasObject] = useState<{ type: 'IMAGE_BOX'; mode: 'box' | 'image' } | null>(null);
+  const [isDebugMode, setIsDebugMode] = useState(false);
   const historyStackRef = useRef<string[]>([INITIAL_DSL]);
   const historyIndexRef = useRef(0);
   const isApplyingHistoryRef = useRef(false);
@@ -438,6 +439,34 @@ const App: React.FC = () => {
     if (activePalette) return getBrandPaletteSwatches(activePalette);
     return getBrandPaletteSwatches(currentBrandTheme);
   }, [activePalette, currentBrandTheme]);
+  const fontDebugInfo = useMemo(() => {
+    const slideOptions = currentSlide?.options || {};
+    const availableFamilies = [...(carousel?.customFonts || []), ...clientFonts].map((font) => font.family);
+    const fontChecks =
+      typeof document !== 'undefined' && 'fonts' in document
+        ? [activePalette?.font_padrao, activePalette?.font_destaque, currentBrandTheme.fontPadrão, currentBrandTheme.fontDestaque, currentSlideTheme.fontPadrão, currentSlideTheme.fontDestaque]
+            .filter((value, index, array): value is string => Boolean(value) && array.indexOf(value) === index)
+            .map((family) => ({
+              family,
+              loaded: document.fonts.check(`16px "${family}"`),
+            }))
+        : [];
+
+    return {
+      activePaletteId: activePalette?.id || null,
+      activePaletteName: activePalette?.name || null,
+      presetPrimary: activePalette?.font_padrao || null,
+      presetSecondary: activePalette?.font_destaque || null,
+      brandPrimary: currentBrandTheme.fontPadrão || null,
+      brandSecondary: currentBrandTheme.fontDestaque || null,
+      slidePrimaryOverride: slideOptions.fontPadrão ?? null,
+      slideSecondaryOverride: slideOptions.fontDestaque ?? null,
+      effectivePrimary: currentSlideTheme.fontPadrão || null,
+      effectiveSecondary: currentSlideTheme.fontDestaque || null,
+      availableFamilies,
+      fontChecks,
+    };
+  }, [activePalette, carousel?.customFonts, clientFonts, currentBrandTheme.fontDestaque, currentBrandTheme.fontPadrão, currentSlide?.options, currentSlideTheme.fontDestaque, currentSlideTheme.fontPadrão]);
   const globalSpacing = useMemo(() => {
     const slides = carousel?.slides || [];
     const firstPadding = slides[0]?.options?.padding ?? 80;
@@ -817,6 +846,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentSlide?.image?.boxX, currentSlide?.image?.boxY, currentSlide?.image?.imageX, currentSlide?.image?.imageY, selectedCanvasObject, undoLastAction, updateSlideProperties]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    setIsDebugMode(params.get('debug') === '1');
+  }, []);
+
   const loadData = useCallback(async () => {
     setIsSyncing(true);
     try {
@@ -828,6 +863,18 @@ const App: React.FC = () => {
 
       console.log('Loaded Clients:', clientPresets.length);
       console.log('Loaded Fonts:', fetchedFonts.length);
+      if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') {
+        console.table(clientPresets.map((preset: any) => ({
+          id: preset.id,
+          name: preset.name,
+          font_padrao: preset.font_padrao,
+          font_destaque: preset.font_destaque,
+        })));
+        console.table(fetchedFonts.map((font: any) => ({
+          family: font.family,
+          name: font.name,
+        })));
+      }
 
       setClientFonts(fetchedFonts);
       setBrandPresets(
@@ -1104,6 +1151,14 @@ const App: React.FC = () => {
         const parsed = JSON.parse(prev);
         const previousTheme = parsed.brandTheme || null;
         const nextTheme = createBrandThemeFromPreset(preset, [...(carousel?.customFonts || []), ...clientFonts]);
+        if (isDebugMode) {
+          console.log('Applying preset debug', {
+            preset,
+            previousTheme,
+            nextTheme,
+            availableFonts: [...(carousel?.customFonts || []), ...clientFonts].map((font) => font.family),
+          });
+        }
 
         parsed.brandTheme = nextTheme;
         if (Array.isArray(parsed.slides)) {
@@ -2123,7 +2178,7 @@ const App: React.FC = () => {
           <div className="flex-1 flex items-center justify-center overflow-auto p-20">
             {carousel && carousel.slides.length > 0 ? (
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'center' }} className="transition-transform duration-500 shadow-[0_60px_150px_rgba(0,0,0,0.8)] shrink-0">
-                {carousel.slides[currentIndex] && <SlideCanvas slide={carousel.slides[currentIndex]} index={currentIndex} canvasRef={canvasRef} onEditIcon={(b, i) => setEditingIconBlock({ block: b, index: i })} customFonts={[...(carousel.customFonts || []), ...clientFonts]} brandTheme={carousel.brandTheme} projectFX={carousel.projectFX} onUpdateImage={updateSlideProperties} onSelectionChange={setSelectedCanvasObject} />}
+                {carousel.slides[currentIndex] && <SlideCanvas slide={carousel.slides[currentIndex]} index={currentIndex} canvasRef={canvasRef} onEditIcon={(b, i) => setEditingIconBlock({ block: b, index: i })} customFonts={[...(carousel.customFonts || []), ...clientFonts]} brandTheme={carousel.brandTheme} projectFX={carousel.projectFX} onUpdateImage={updateSlideProperties} onSelectionChange={setSelectedCanvasObject} debugMode={isDebugMode} />}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-6 text-center opacity-50 select-none">
@@ -2138,6 +2193,15 @@ const App: React.FC = () => {
               </div>
             )}
           </div>
+          {isDebugMode && carousel && carousel.slides.length > 0 && (
+            <div className="absolute right-5 bottom-24 z-50 w-[440px] max-h-[55vh] overflow-auto rounded-[28px] border border-amber-400/30 bg-black/85 p-4 shadow-2xl backdrop-blur-xl">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">Debug Branding</span>
+                <span className="text-[10px] font-mono text-amber-100/70">?debug=1</span>
+              </div>
+              <pre className="whitespace-pre-wrap break-words font-mono text-[10px] leading-5 text-amber-50">{JSON.stringify(fontDebugInfo, null, 2)}</pre>
+            </div>
+          )}
           {carousel && carousel.slides.length > 0 && (<div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-6 bg-black/50 backdrop-blur-2xl px-8 py-4 rounded-full border border-white/5 shadow-2xl transition-all hover:border-white/10"><button disabled={currentIndex === 0} onClick={() => setCurrentIndex(prev => prev - 1)} className="p-2 text-zinc-500 hover:text-white disabled:opacity-5 transition-all"><ChevronLeft size={20}/></button><div className="flex gap-2.5">{carousel.slides.map((_, i) => (<button key={i} onClick={() => setCurrentIndex(i)} className={`h-2 transition-all duration-300 rounded-full ${currentIndex === i ? 'w-8 bg-brand' : 'w-2 bg-white/10 hover:bg-white/20'}`} />))}</div><button disabled={currentIndex === carousel.slides.length - 1} onClick={() => setCurrentIndex(prev => prev + 1)} className="p-2 text-zinc-500 hover:text-white disabled:opacity-5 transition-all"><ChevronRight size={20}/></button></div>)}
         </main>
       </div>

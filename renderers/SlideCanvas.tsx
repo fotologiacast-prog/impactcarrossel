@@ -33,7 +33,8 @@ export const SlideCanvas: React.FC<{
   projectFX?: ProjectFX,
   onUpdateImage?: (updates: { path: (string | number)[]; value: any }[]) => void,
   onSelectionChange?: (selection: { type: 'IMAGE_BOX'; mode: 'box' | 'image' } | null) => void,
-}> = ({ slide, index, canvasRef, onEditIcon, customFonts, brandTheme, projectFX, onUpdateImage, onSelectionChange }) => {
+  debugMode?: boolean,
+}> = ({ slide, index, canvasRef, onEditIcon, customFonts, brandTheme, projectFX, onUpdateImage, onSelectionChange, debugMode = false }) => {
   const templateDef = templateRegistry.get(slide.template)
   const effectiveOptions = useMemo(
     () => mergeSlideOptionsWithBrandTheme(brandTheme, slide.options, projectFX),
@@ -942,11 +943,17 @@ export const SlideCanvas: React.FC<{
               <div className="relative w-full max-w-[840px] mx-auto">
                 <div
                   className="absolute inset-[16px] rounded-[56px] pointer-events-none"
-                  style={profileFocusVisualStyles?.shadow}
+                  style={{
+                    ...profileFocusVisualStyles?.shadow,
+                    outline: debugMode ? '2px solid rgba(250,204,21,0.85)' : undefined,
+                  }}
                 />
                 <div
                   className="relative overflow-hidden rounded-[56px] p-16 flex flex-col justify-center min-h-0"
-                  style={profileShellStyle}
+                  style={{
+                    ...profileShellStyle,
+                    outline: debugMode ? '2px solid rgba(34,197,94,0.85)' : undefined,
+                  }}
                 >
                   <div
                     className="absolute inset-0 pointer-events-none"
