@@ -338,6 +338,15 @@ export const applyBrandThemeToSlides = (
     };
   });
 
+export const syncBrandThemeFontFamilies = (
+  brandTheme: BrandTheme,
+  fonts: Array<Pick<CustomFont, 'family' | 'name'>>,
+): BrandTheme => ({
+  ...brandTheme,
+  fontPadrão: resolveFontPreference(brandTheme.fontPadrão || DEFAULT_PRIMARY_FONT, fonts),
+  fontDestaque: resolveFontPreference(brandTheme.fontDestaque || DEFAULT_SECONDARY_FONT, fonts),
+});
+
 const formatInstagramHandle = (value?: string | null): string | undefined => {
   if (!isNonEmptyString(value)) return undefined;
   const normalized = value.trim().replace(/^@+/, '');

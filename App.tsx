@@ -13,6 +13,7 @@ import {
   getBrandPaletteSwatches,
   mergeSlideOptionsWithBrandTheme,
   normalizeFontFamilyName,
+  syncBrandThemeFontFamilies,
 } from './utils/branding';
 import * as Icons from 'lucide-react';
 import { 
@@ -851,6 +852,23 @@ const App: React.FC = () => {
       setActivePaletteId(carousel.brandTheme.paletteId);
     }
   }, [carousel?.brandTheme?.paletteId]);
+  useEffect(() => {
+    if (!carousel?.brandTheme || clientFonts.length === 0) return;
+
+    const resolvedTheme = syncBrandThemeFontFamilies(
+      carousel.brandTheme,
+      [...(carousel.customFonts || []), ...clientFonts],
+    );
+
+    if (
+      resolvedTheme.fontPadrão === carousel.brandTheme.fontPadrão &&
+      resolvedTheme.fontDestaque === carousel.brandTheme.fontDestaque
+    ) {
+      return;
+    }
+
+    updateGlobalProperty(['brandTheme'], resolvedTheme);
+  }, [carousel?.brandTheme, carousel?.customFonts, clientFonts, updateGlobalProperty]);
   useEffect(() => {
     const clientId = carousel?.brandTheme?.paletteId;
     const isDefaultPreset = DEFAULT_BRAND_PRESETS.some((preset) => preset.id === clientId);

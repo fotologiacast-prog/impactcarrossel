@@ -10,6 +10,7 @@ import {
   getContrastTextColor,
   mergeSlideOptionsWithBrandTheme,
   normalizeFontFamilyName,
+  syncBrandThemeFontFamilies,
   rgbToHex,
   resolveFontPreference,
 } from '../utils/branding.ts';
@@ -106,6 +107,21 @@ const mergedWithEmptyFontOverride = mergeSlideOptionsWithBrandTheme(
 
 assert.equal(mergedWithEmptyFontOverride.fontPadrão, 'Merriweather Regular');
 assert.equal(mergedWithEmptyFontOverride.fontDestaque, 'Oswald');
+
+const syncedThemeFonts = syncBrandThemeFontFamilies(
+  {
+    paletteId: 'client-1',
+    fontPadrão: 'Merriweather',
+    fontDestaque: 'Oswald Display',
+  } as any,
+  [
+    { family: 'Merriweather Regular', name: 'Merriweather Regular' },
+    { family: 'Oswald', name: 'Oswald Display' },
+  ],
+);
+
+assert.equal(syncedThemeFonts.fontPadrão, 'Merriweather Regular');
+assert.equal(syncedThemeFonts.fontDestaque, 'Oswald');
 
 assert.equal(normalizeFontFamilyName(' Playfair-Display '), 'playfairdisplay');
 assert.equal(
