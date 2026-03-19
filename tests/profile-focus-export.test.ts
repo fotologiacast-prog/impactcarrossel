@@ -13,7 +13,8 @@ assert.equal(visualStyles.shell.boxShadow, undefined);
 assert.equal(visualStyles.shadow.opacity, 0.34);
 assert.equal(visualStyles.shadow.filter, undefined);
 assert.equal(visualStyles.shadow.background, 'transparent');
+assert.equal(visualStyles.shadow.transform, undefined);
 assert.match(visualStyles.shadow.boxShadow || '', /rgba\(0,0,0,0\.2/);
-assert.match(visualStyles.shadow.boxShadow || '', /rgba\(0,0,0,0\.34/);
+assert.match(visualStyles.shadow.boxShadow || '', /rgba\(0,0,0,0\.14/);
 
 console.log('profile-focus-export.test.ts passed');

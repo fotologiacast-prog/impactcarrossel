@@ -32,8 +32,7 @@ export const getProfileFocusVisualStyles = ({
   },
   shadow: {
     background: 'transparent',
-    boxShadow: `0 ${Math.round(24 + blur * 0.7)}px ${Math.round(72 + blur * 1.5)}px rgba(0,0,0,0.34), 0 ${Math.round(12 + blur * 0.35)}px ${Math.round(30 + blur * 0.7)}px rgba(0,0,0,0.22)`,
+    boxShadow: `0 ${Math.round(18 + blur * 0.55)}px ${Math.round(56 + blur * 1.2)}px rgba(0,0,0,0.22), 0 ${Math.round(32 + blur * 0.65)}px ${Math.round(110 + blur * 1.6)}px rgba(0,0,0,0.14)`,
     opacity: 0.34,
-    transform: 'translateY(24px) scale(0.94)',
   },
 });

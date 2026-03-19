@@ -177,6 +177,33 @@ const isFontAsset = (asset: any) => {
   );
 };
 
+const getClientFontFallbacks = (assets: any[], clientId: string) => {
+  const uniqueFonts = new Map<string, { family: string; name: string; url: string; id: string }>();
+
+  assets
+    .filter((asset: any) => asset?.client_id === clientId)
+    .filter(isFontAsset)
+    .filter((asset: any) => asset?.id && asset?.name && asset?.url)
+    .forEach((asset: any) => {
+      const rawName = String(asset.name).split('.')[0].trim();
+      const key = rawName.toLowerCase();
+      if (!uniqueFonts.has(key)) {
+        uniqueFonts.set(key, {
+          id: asset.id,
+          name: rawName,
+          family: rawName,
+          url: asset.url,
+        });
+      }
+    });
+
+  const fonts = Array.from(uniqueFonts.values());
+  return {
+    primary: fonts[0]?.family,
+    secondary: fonts[1]?.family || fonts[0]?.family,
+  };
+};
+
 export default async function handler(_req: any, res: any) {
   try {
     const supabase = getSupabaseServer();
@@ -208,6 +235,7 @@ export default async function handler(_req: any, res: any) {
         .filter((color: any) => color.client_id === client.id)
         .map((color: any) => color.hex)
         .filter(Boolean);
+      const fontFallbacks = getClientFontFallbacks(assets || [], client.id);
 
       while (paletteColors.length < 5) {
         paletteColors.push(paletteColors[0] || '#000000');
@@ -219,12 +247,14 @@ export default async function handler(_req: any, res: any) {
       const fontPadrao = resolveFontPreference(
         readStringPreference(preferences, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
           || readStringPreference(imageSettings, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
+          || fontFallbacks.primary
           || DEFAULT_PRIMARY_FONT,
         fonts,
       );
       const fontDestaque = resolveFontPreference(
         readStringPreference(preferences, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
           || readStringPreference(imageSettings, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
+          || fontFallbacks.secondary
           || DEFAULT_SECONDARY_FONT,
         fonts,
       );

@@ -27,6 +27,14 @@ const brandingPayload = buildBrandingResponse({
         fontDestaque: 'Oswald',
       },
     },
+    {
+      id: 'client-3',
+      name: 'Clinica Fallback',
+      profile_picture: null,
+      instagram: null,
+      preferences: null,
+      image_settings: null,
+    },
   ],
   colors: [
     { client_id: 'client-1', hex: '#111111' },
@@ -37,6 +45,9 @@ const brandingPayload = buildBrandingResponse({
     { client_id: 'client-2', hex: '#222222' },
     { client_id: 'client-2', hex: '#eeeeee' },
     { client_id: 'client-2', hex: '#7c3aed' },
+    { client_id: 'client-3', hex: '#333333' },
+    { client_id: 'client-3', hex: '#fafafa' },
+    { client_id: 'client-3', hex: '#ef4444' },
   ],
   assets: [
     {
@@ -60,11 +71,27 @@ const brandingPayload = buildBrandingResponse({
       url: 'https://cdn.example.com/hero.png',
       file_type: 'image/png',
     },
+    {
+      id: 'font-3',
+      client_id: 'client-3',
+      category: 'font',
+      name: 'Lora-VariableFont_wght.ttf',
+      url: 'https://cdn.example.com/lora.ttf',
+      file_type: 'font/ttf',
+    },
+    {
+      id: 'font-4',
+      client_id: 'client-3',
+      category: 'font',
+      name: 'Dream-Avenue.otf',
+      url: 'https://cdn.example.com/dream.otf',
+      file_type: 'font/otf',
+    },
   ],
 });
 
-assert.equal(brandingPayload.clients.length, 2);
-assert.equal(brandingPayload.fonts.length, 2);
+assert.equal(brandingPayload.clients.length, 3);
+assert.equal(brandingPayload.fonts.length, 4);
 assert.equal(brandingPayload.fonts[0].family, 'Merriweather Regular');
 assert.equal(brandingPayload.fonts[1].family, 'Oswald');
 assert.equal(brandingPayload.clients[0].font_padrao, 'Merriweather Regular');
@@ -78,6 +105,8 @@ assert.deepEqual(
 );
 assert.equal(brandingPayload.clients[1].font_padrao, 'Merriweather Regular');
 assert.equal(brandingPayload.clients[1].font_destaque, 'Oswald');
+assert.equal(brandingPayload.clients[2].font_padrao, 'Lora-VariableFont_wght');
+assert.equal(brandingPayload.clients[2].font_destaque, 'Dream-Avenue');
 
 const clientResponse = buildClientResponse({
   id: 'client-2',

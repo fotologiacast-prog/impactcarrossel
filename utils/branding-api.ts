@@ -90,6 +90,23 @@ const toFontAssets = (assets: ClientAssetRow[]): FontAsset[] =>
       };
     });
 
+const getClientFontFallbacks = (assets: ClientAssetRow[], clientId: string) => {
+  const uniqueFonts = new Map<string, FontAsset>();
+  toFontAssets(assets.filter((asset) => asset.client_id === clientId)).forEach((font) => {
+    const key = font.family.trim().toLowerCase();
+    if (!uniqueFonts.has(key)) {
+      uniqueFonts.set(key, font);
+    }
+  });
+
+  const fonts = Array.from(uniqueFonts.values());
+
+  return {
+    primary: fonts[0]?.family,
+    secondary: fonts[1]?.family || fonts[0]?.family,
+  };
+};
+
 export const buildBrandingResponse = ({
   clients,
   colors,
@@ -104,6 +121,7 @@ export const buildBrandingResponse = ({
   const clientPresets = clients.map((client) => {
     const clientColors = colors.filter((color) => color.client_id === client.id);
     const paletteColors = clientColors.map((color) => color.hex).filter(Boolean) as string[];
+    const fontFallbacks = getClientFontFallbacks(assets, client.id);
 
     while (paletteColors.length < 5) {
       paletteColors.push(paletteColors[0] || '#000000');
@@ -115,12 +133,14 @@ export const buildBrandingResponse = ({
     const fontPadrao = resolveFontPreference(
       readStringPreference(prefs, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
         || readStringPreference(settings, ['font_padrao', 'fontPadrao', 'fontPadrão', 'fonte_padrao', 'fontePadrao'])
+        || fontFallbacks.primary
         || 'Inter',
       fetchedFonts,
     );
     const fontDestaque = resolveFontPreference(
       readStringPreference(prefs, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
         || readStringPreference(settings, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
+        || fontFallbacks.secondary
         || 'Instrument Serif',
       fetchedFonts,
     );

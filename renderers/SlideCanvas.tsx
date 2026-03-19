@@ -942,7 +942,7 @@ export const SlideCanvas: React.FC<{
             {isProfileMode ? (
               <div className="relative w-full max-w-[840px] mx-auto">
                 <div
-                  className="absolute inset-[16px] rounded-[56px] pointer-events-none"
+                  className="absolute inset-0 rounded-[56px] pointer-events-none"
                   style={{
                     ...profileFocusVisualStyles?.shadow,
                     outline: debugMode ? '2px solid rgba(250,204,21,0.85)' : undefined,
