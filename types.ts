@@ -153,6 +153,7 @@ export interface CustomFont {
   name: string;
   family: string;
   url: string;
+  clientId?: string;
 }
 
 export interface BrandTheme {

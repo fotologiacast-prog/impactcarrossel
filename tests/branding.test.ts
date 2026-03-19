@@ -7,6 +7,7 @@ import {
   createBrandThemeFromPreset,
   getBrandPaletteSwatches,
   getDirectionalSampleRegion,
+  getPreferredFontsForInjection,
   getContrastTextColor,
   mergeSlideOptionsWithBrandTheme,
   normalizeFontFamilyName,
@@ -122,6 +123,18 @@ const syncedThemeFonts = syncBrandThemeFontFamilies(
 
 assert.equal(syncedThemeFonts.fontPadrão, 'Merriweather Regular');
 assert.equal(syncedThemeFonts.fontDestaque, 'Oswald');
+
+const preferredFonts = getPreferredFontsForInjection(
+  [
+    { id: '1', family: 'Sora-VariableFont_wght', name: 'Sora-VariableFont_wght', url: 'https://cdn.example.com/other-sora.ttf', clientId: 'other-client' },
+    { id: '2', family: 'Sora-VariableFont_wght', name: 'Sora-VariableFont_wght', url: 'https://cdn.example.com/active-sora.ttf', clientId: 'client-1' },
+    { id: '3', family: 'Ritchain', name: 'Ritchain', url: 'https://cdn.example.com/ritchain.ttf', clientId: 'client-1' },
+  ],
+  'client-1',
+);
+
+assert.equal(preferredFonts.length, 2);
+assert.equal(preferredFonts[0].url, 'https://cdn.example.com/active-sora.ttf');
 
 assert.equal(normalizeFontFamilyName(' Playfair-Display '), 'playfairdisplay');
 assert.equal(

@@ -11,6 +11,7 @@ type FontAsset = {
   name: string;
   family: string;
   url: string;
+  clientId?: string;
 };
 
 const getUniqueColors = (colors: Array<string | null | undefined>) =>
@@ -87,6 +88,7 @@ const toFontAssets = (assets: ClientAssetRow[]): FontAsset[] =>
         name: rawName,
         family: rawName.trim(),
         url: asset.url,
+        clientId: asset.client_id,
       };
     });
 

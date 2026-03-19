@@ -227,6 +227,7 @@ export default async function handler(_req: any, res: any) {
           name: rawName,
           family: rawName.trim(),
           url: asset.url,
+          clientId: asset.client_id,
         };
       });
 

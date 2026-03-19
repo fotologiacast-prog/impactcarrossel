@@ -11,6 +11,7 @@ import {
   applyProjectClientToSlide,
   createBrandThemeFromPreset,
   getBrandPaletteSwatches,
+  getPreferredFontsForInjection,
   mergeSlideOptionsWithBrandTheme,
   normalizeFontFamilyName,
   syncBrandThemeFontFamilies,
@@ -442,6 +443,12 @@ const App: React.FC = () => {
   const fontDebugInfo = useMemo(() => {
     const slideOptions = currentSlide?.options || {};
     const availableFamilies = [...(carousel?.customFonts || []), ...clientFonts].map((font) => font.family);
+    const injectedFonts = getPreferredFontsForInjection([...(carousel?.customFonts || []), ...clientFonts], carousel?.brandTheme?.paletteId)
+      .map((font) => ({
+        family: font.family,
+        clientId: font.clientId || null,
+        url: font.url,
+      }));
     const fontChecks =
       typeof document !== 'undefined' && 'fonts' in document
         ? [activePalette?.font_padrao, activePalette?.font_destaque, currentBrandTheme.fontPadrão, currentBrandTheme.fontDestaque, currentSlideTheme.fontPadrão, currentSlideTheme.fontDestaque]
@@ -464,9 +471,10 @@ const App: React.FC = () => {
       effectivePrimary: currentSlideTheme.fontPadrão || null,
       effectiveSecondary: currentSlideTheme.fontDestaque || null,
       availableFamilies,
+      injectedFonts,
       fontChecks,
     };
-  }, [activePalette, carousel?.customFonts, clientFonts, currentBrandTheme.fontDestaque, currentBrandTheme.fontPadrão, currentSlide?.options, currentSlideTheme.fontDestaque, currentSlideTheme.fontPadrão]);
+  }, [activePalette, carousel?.brandTheme?.paletteId, carousel?.customFonts, clientFonts, currentBrandTheme.fontDestaque, currentBrandTheme.fontPadrão, currentSlide?.options, currentSlideTheme.fontDestaque, currentSlideTheme.fontPadrão]);
   const globalSpacing = useMemo(() => {
     const slides = carousel?.slides || [];
     const firstPadding = slides[0]?.options?.padding ?? 80;
@@ -988,18 +996,11 @@ const App: React.FC = () => {
 
     const customFonts = carousel?.customFonts || [];
     const allFonts = [...customFonts, ...clientFonts];
+    const preferredFonts = getPreferredFontsForInjection(allFonts, carousel?.brandTheme?.paletteId);
     
-    // Deduplicate fonts by family name
-    const uniqueFonts = new Map();
-    allFonts.forEach(f => {
-      if (f.family && f.url) {
-        uniqueFonts.set(normalizeFontFamilyName(f.family), f);
-      }
-    });
-    
-    console.log('Injecting fonts:', Array.from(uniqueFonts.values()).map(f => f.family));
+    console.log('Injecting fonts:', preferredFonts.map(f => `${f.family}${f.clientId ? ` (${f.clientId})` : ''}`));
 
-    const css = Array.from(uniqueFonts.values()).map(font => {
+    const css = preferredFonts.map(font => {
       // Handle URLs with query parameters
       const cleanUrl = font.url.split('?')[0];
       const ext = cleanUrl.split('.').pop()?.toLowerCase();
@@ -1023,7 +1024,7 @@ const App: React.FC = () => {
     }).join('\n');
 
     styleEl.textContent = css;
-  }, [carousel?.customFonts, clientFonts]);
+  }, [carousel?.brandTheme?.paletteId, carousel?.customFonts, clientFonts]);
 
   useEffect(() => {
     if (isApplyingHistoryRef.current) {

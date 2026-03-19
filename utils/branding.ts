@@ -347,6 +347,34 @@ export const syncBrandThemeFontFamilies = (
   fontDestaque: resolveFontPreference(brandTheme.fontDestaque || DEFAULT_SECONDARY_FONT, fonts),
 });
 
+export const getPreferredFontsForInjection = (
+  fonts: CustomFont[],
+  preferredClientId?: string | null,
+): CustomFont[] => {
+  const uniqueFonts = new Map<string, CustomFont>();
+
+  fonts.forEach((font) => {
+    if (!isNonEmptyString(font.family) || !isNonEmptyString(font.url)) return;
+
+    const key = normalizeFontFamilyName(font.family);
+    const existing = uniqueFonts.get(key);
+
+    if (!existing) {
+      uniqueFonts.set(key, font);
+      return;
+    }
+
+    const existingPreferred = Boolean(preferredClientId && existing.clientId === preferredClientId);
+    const nextPreferred = Boolean(preferredClientId && font.clientId === preferredClientId);
+
+    if (!existingPreferred && nextPreferred) {
+      uniqueFonts.set(key, font);
+    }
+  });
+
+  return Array.from(uniqueFonts.values());
+};
+
 const formatInstagramHandle = (value?: string | null): string | undefined => {
   if (!isNonEmptyString(value)) return undefined;
   const normalized = value.trim().replace(/^@+/, '');
