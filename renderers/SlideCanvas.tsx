@@ -707,6 +707,14 @@ export const SlideCanvas: React.FC<{
 
   const renderLayout = () => {
     const canvasPadding = `${padding}px`;
+    const verticalAlign = effectiveOptions.contentVerticalAlign || 'center';
+    const verticalEdgeInset = verticalAlign === 'center' ? padding : padding + 128;
+    const contentPaddingStyle: React.CSSProperties = {
+      paddingTop: verticalAlign === 'top' ? verticalEdgeInset : padding,
+      paddingBottom: verticalAlign === 'bottom' ? verticalEdgeInset : padding,
+      paddingLeft: padding,
+      paddingRight: padding,
+    };
     const availableCanvasWidth = Math.max(320, 1080 - padding * 2);
     const bRot = imageConfig?.boxRotation ?? 0;
     const bScale = imageConfig?.boxScale ?? 1;
@@ -775,7 +783,7 @@ export const SlideCanvas: React.FC<{
     const renderLayoutInternal = () => {
       if (templateDef.name === 'CARD_BOX' || templateDef.name === 'BENTO_SHOWCASE') {
         return (
-          <div className="relative h-full w-full flex flex-col justify-center items-center" style={{ padding: canvasPadding }}>
+          <div className="relative h-full w-full flex flex-col justify-center items-center" style={contentPaddingStyle}>
             {renderBlocks()}
           </div>
         );
@@ -786,7 +794,7 @@ export const SlideCanvas: React.FC<{
           if (isHorizontal) {
             const isRight = pos === 'right';
             return (
-              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={{ padding: canvasPadding }}>
+              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={contentPaddingStyle}>
                 <div
                   className={`w-full flex items-center ${isRight ? 'flex-row' : 'flex-row-reverse'}`}
                   style={{
@@ -813,7 +821,7 @@ export const SlideCanvas: React.FC<{
             const isBottom = pos === 'bottom';
             // Vertical boxes now use consistent width logic
             return (
-              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={{ padding: canvasPadding }}>
+              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={contentPaddingStyle}>
                 <div
                   className={`w-full flex flex-col items-center ${isBottom ? 'flex-col' : 'flex-col-reverse'}`}
                   style={{
@@ -840,7 +848,7 @@ export const SlideCanvas: React.FC<{
       }
       if (templateDef.name === 'PNG_STAGE') {
         return (
-          <div className={`relative h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={{ padding: canvasPadding }}>
+          <div className={`relative h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={contentPaddingStyle}>
             <div className={`w-full max-w-[820px] flex flex-col min-h-0 ${contentSelfClass}`}>
               {renderBlocks()}
             </div>
@@ -883,7 +891,7 @@ export const SlideCanvas: React.FC<{
                 }}
               />
             </div>
-          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} items-center`} style={{ padding: canvasPadding }}>
+          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} items-center`} style={contentPaddingStyle}>
               <div
                 style={{
                   ...imageBoxStyle,
@@ -916,8 +924,8 @@ export const SlideCanvas: React.FC<{
         const isSideBySide = pos === 'left' || pos === 'right';
         const isVertical = pos === 'top' || pos === 'bottom';
         const isRightOrBottom = pos === 'right' || pos === 'bottom';
-        if (isSideBySide) return (<div className={`relative h-full w-full flex ${isRightOrBottom ? 'flex-row' : 'flex-row-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 h-full flex flex-col ${contentVerticalClass} px-24 z-20 min-w-0`}>{renderSplitAccentEdge(pos === 'right' ? 'right' : 'left')}<div className={`w-full max-w-[840px] ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="flex-1 h-full relative overflow-hidden bg-zinc-900 border-x border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
-        if (isVertical) return (<div className={`relative h-full w-full flex flex-col ${isRightOrBottom ? 'flex-col' : 'flex-col-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 w-full flex flex-col ${contentVerticalClass} z-20`} style={{ padding: canvasPadding }}>{renderSplitAccentEdge(pos === 'bottom' ? 'bottom' : 'top')}<div className={`max-w-[840px] w-full ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="w-full h-1/2 overflow-hidden relative border-y border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
+        if (isSideBySide) return (<div className={`relative h-full w-full flex ${isRightOrBottom ? 'flex-row' : 'flex-row-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 h-full flex flex-col ${contentVerticalClass} px-24 z-20 min-w-0`} style={{ paddingTop: verticalAlign === 'top' ? verticalEdgeInset : padding, paddingBottom: verticalAlign === 'bottom' ? verticalEdgeInset : padding }}>{renderSplitAccentEdge(pos === 'right' ? 'right' : 'left')}<div className={`w-full max-w-[840px] ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="flex-1 h-full relative overflow-hidden bg-zinc-900 border-x border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
+        if (isVertical) return (<div className={`relative h-full w-full flex flex-col ${isRightOrBottom ? 'flex-col' : 'flex-col-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 w-full flex flex-col ${contentVerticalClass} z-20`} style={contentPaddingStyle}>{renderSplitAccentEdge(pos === 'bottom' ? 'bottom' : 'top')}<div className={`max-w-[840px] w-full ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="w-full h-1/2 overflow-hidden relative border-y border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
       }
       
       const isFullBg = imageConfig?.type === 'IMAGE_BACKGROUND' || imageConfig?.type === 'IMAGE_SELECT' || templateDef.name === 'MEGA_STATEMENT' || templateDef.name === 'CINEMATIC_BG' || templateDef.name === 'HERO_STATEMENT' || templateDef.name === 'FADE';
@@ -957,7 +965,7 @@ export const SlideCanvas: React.FC<{
               )}
               <div className="absolute inset-0" style={{ background: getDirectionalGradient(fadeSide, fadeStrength, fadeColor) }} />
             </div>
-            <div className={`relative z-10 h-full w-full flex flex-col ${layout.wrapper.replace('justify-center', contentVerticalClass)}`} style={{ padding: canvasPadding }}>
+            <div className={`relative z-10 h-full w-full flex flex-col ${layout.wrapper.replace('justify-center', contentVerticalClass)}`} style={contentPaddingStyle}>
               <div
                 className={`w-full flex flex-col justify-center min-h-0 ${layout.panel}`}
                 style={{ maxWidth: `${fadeContentMaxWidth}px` }}
@@ -1031,7 +1039,7 @@ export const SlideCanvas: React.FC<{
               )}
             </div>
           )}
-          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={{ padding: canvasPadding }}>
+          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={contentPaddingStyle}>
             {isProfileMode ? (
               <div className={`relative w-full max-w-[840px] ${contentSelfClass}`}>
                 <div
