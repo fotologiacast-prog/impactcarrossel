@@ -24,10 +24,20 @@ export function renderBlock(
   },
   layoutContext?: {
     defaultWidthPercent?: number;
+    defaultTextAlign?: 'left' | 'center' | 'right';
   }
 ) {
   const blockIdx = globalIndex ?? 0;
-  const alignment = block.options?.textAlign || (block.options?.align as 'left' | 'center' | 'right' | undefined) || 'left';
+  const isTextualBlock = block.type === 'TITLE'
+    || block.type === 'PARAGRAPH'
+    || block.type === 'LIST'
+    || block.type === 'CARD'
+    || block.type === 'BADGE'
+    || block.type === 'USER';
+  const alignment = block.options?.textAlign
+    || (block.options?.align as 'left' | 'center' | 'right' | undefined)
+    || (isTextualBlock ? layoutContext?.defaultTextAlign : undefined)
+    || 'left';
   const widthPercent = block.options?.widthPercent ?? layoutContext?.defaultWidthPercent;
   const shouldApplyWidth = widthPercent !== undefined && !Number.isNaN(widthPercent) && block.type !== 'SPACER' && block.type !== 'IMAGE';
   const shouldShrinkWrapContent = block.type === 'BOX' && !isGridMember && !shouldApplyWidth;

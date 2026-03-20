@@ -32,6 +32,44 @@ const normalizeText = (value: string) =>
 const stripMeasurementMarkers = (value: string) =>
   value.replace(/\[\[|\]\]|\*\*/g, '');
 
+const hasTrailingOrphan = (lines: string[]) => {
+  if (lines.length < 2) return false;
+  const lastLineWords = lines[lines.length - 1]?.trim().split(/\s+/).filter(Boolean) || [];
+  return lastLineWords.length === 1;
+};
+
+const rebalanceTrailingOrphan = (
+  lines: string[],
+  fontSize: number,
+  constraint: TextConstraint,
+  measurer: TextMeasurer,
+) => {
+  if (!hasTrailingOrphan(lines)) return lines;
+
+  const nextLines = [...lines];
+  const lastIndex = nextLines.length - 1;
+  const previousWords = nextLines[lastIndex - 1]?.split(/\s+/).filter(Boolean) || [];
+  if (previousWords.length < 2) return lines;
+
+  const movedWord = previousWords.pop();
+  if (!movedWord) return lines;
+
+  const nextPrevious = previousWords.join(' ');
+  const nextLast = `${movedWord} ${nextLines[lastIndex]}`.trim();
+  const nextWidth = measurer.measureWidth(stripMeasurementMarkers(nextLast), {
+    fontSize,
+    fontFamily: constraint.fontFamily,
+    fontWeight: constraint.fontWeight,
+    letterSpacing: constraint.letterSpacing,
+  });
+
+  if (nextWidth > constraint.availableWidth) return lines;
+
+  nextLines[lastIndex - 1] = nextPrevious;
+  nextLines[lastIndex] = nextLast;
+  return nextLines;
+};
+
 const getGreedyLines = (
   text: string,
   fontSize: number,
@@ -63,7 +101,7 @@ const getGreedyLines = (
   }
 
   if (currentLine) lines.push(currentLine);
-  return lines;
+  return rebalanceTrailingOrphan(lines, fontSize, constraint, measurer);
 };
 
 const getBalancedLines = (
@@ -119,7 +157,7 @@ const getBalancedLines = (
   };
 
   visit(0, []);
-  return best;
+  return rebalanceTrailingOrphan(best, fontSize, constraint, measurer);
 };
 
 const evaluateQuality = (
@@ -146,7 +184,7 @@ const evaluateQuality = (
   });
 
   const lastLineWords = lines[lines.length - 1]?.split(/\s+/).filter(Boolean) || [];
-  if (constraint.role === 'title' && lastLineWords.length === 1) score -= 25;
+  if (lastLineWords.length === 1) score -= constraint.role === 'title' ? 42 : 30;
   if (lines.length > constraint.maxLines) score -= (lines.length - constraint.maxLines) * 30;
 
   return Math.max(0, Math.round(score));
@@ -202,7 +240,7 @@ export const fitTextToConstraint = (
   };
 
   let result = tryFit(constraint.fontSize);
-  if (doesFit(result.lines, result.effectiveFontSize, constraint, measurer)) {
+  if (doesFit(result.lines, result.effectiveFontSize, constraint, measurer) && !hasTrailingOrphan(result.lines)) {
     return result;
   }
 
@@ -212,7 +250,7 @@ export const fitTextToConstraint = (
 
   for (let size = constraint.fontSize - 2; size >= minFontSize; size -= 2) {
     const attempt = tryFit(size);
-    if (doesFit(attempt.lines, attempt.effectiveFontSize, constraint, measurer)) {
+    if (doesFit(attempt.lines, attempt.effectiveFontSize, constraint, measurer) && !hasTrailingOrphan(attempt.lines)) {
       return attempt;
     }
     result = attempt;

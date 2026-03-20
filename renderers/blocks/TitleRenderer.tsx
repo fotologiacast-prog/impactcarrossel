@@ -22,9 +22,9 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const [availableWidth, setAvailableWidth] = React.useState(0);
 
   const sizeClasses = {
-    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.22]' : 'leading-[1.14]'}`,
-    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.16]' : 'leading-[1.04]'}`,
-    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.02]' : 'leading-[0.9]'}`
+    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.28]' : 'leading-[1.14]'}`,
+    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.22]' : 'leading-[1.04]'}`,
+    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.08]' : 'leading-[0.9]'}`
   };
 
   const selectedFont = fontVariant === 'destaque' 
@@ -33,7 +33,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const usingDedicatedSecondaryFont = fontVariant === 'destaque' && selectedFont !== theme.typography.fontFamily;
   const defaultFontWeight = (usingDedicatedSecondaryFont || isSerifLegacy || selectedFont.includes('Serif') || selectedFont.includes('Playfair')) ? 400 : 900;
   const resolvedFontSize = block.options?.fontSize || (size === 'sm' ? 64 : size === 'lg' ? 180 : 80);
-  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? 1.14 : size === 'lg' ? 0.9 : 1.04);
+  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? (hasBgHighlight ? 1.28 : 1.14) : size === 'lg' ? (hasBgHighlight ? 1.08 : 0.9) : (hasBgHighlight ? 1.22 : 1.04));
   const titleMaxLines = size === 'lg' ? 3 : 4;
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
     availableWidth: availableWidth || 840,
@@ -108,7 +108,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
                     color: theme.colors.hlTextColor || '#000',
                     WebkitBoxDecorationBreak: 'clone',
                     boxDecorationBreak: 'clone' as any,
-                    fontFamily: theme.typography.fontFamily // Use standard font for highlights usually
+                    fontFamily: safeFontFamily
                   }}
                 >
                   {renderEmojiText(s, `bg-hl-${i}`, '1.08em')}
@@ -149,7 +149,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
     const finalParts: (string | React.ReactNode)[] = [];
     parts.forEach(part => {
       if (typeof part === 'string') {
-        const split = part.split(/\*\*(.*?)\*\*/g);
+        const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
           if (i % 2 === 1) {
             finalParts.push(<span key={`bold-${i}`} className="font-black">{renderEmojiText(s, `bold-${i}`, '1.08em')}</span>);

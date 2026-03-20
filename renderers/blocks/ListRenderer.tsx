@@ -49,7 +49,7 @@ export function ListRenderer({ block, theme }: ListRendererProps) {
                   style={{ 
                     backgroundColor: theme.colors.hlBgColor || theme.colors.accent,
                     color: theme.colors.hlTextColor || '#000',
-                    fontFamily: theme.typography.fontFamily
+                    fontFamily: safeFontFamily
                   }}
                 >
                   {renderEmojiText(s, `bg-hl-${i}`)}
@@ -98,7 +98,7 @@ export function ListRenderer({ block, theme }: ListRendererProps) {
     const finalParts: (string | React.ReactNode)[] = [];
     parts.forEach(part => {
       if (typeof part === 'string') {
-        const split = part.split(/\*\*(.*?)\*\*/g);
+        const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
           if (i % 2 === 1) {
             finalParts.push(

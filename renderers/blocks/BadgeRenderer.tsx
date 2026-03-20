@@ -89,7 +89,7 @@ export function BadgeRenderer({ block, theme }: { block: Block; theme: Theme }) 
                     color: theme.colors.hlTextColor || '#000',
                     WebkitBoxDecorationBreak: 'clone',
                     boxDecorationBreak: 'clone' as any,
-                    fontFamily: theme.typography.fontFamily
+                    fontFamily: safeFontFamily
                   }}
                 >
                   {renderEmojiText(s, `bg-hl-${i}`)}

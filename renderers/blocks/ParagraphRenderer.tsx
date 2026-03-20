@@ -15,7 +15,8 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
     ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif') 
     : theme.typography.fontFamily;
   const resolvedFontSize = block.options?.fontSize || 32;
-  const resolvedLineHeight = block.options?.lineHeight ?? 1.38;
+  const hasBgHighlight = rawContent.includes('[[');
+  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.48 : 1.38);
   const fitted = React.useMemo(() => fitTextToConstraint(rawContent, {
     availableWidth: availableWidth || 840,
     availableHeight: resolvedFontSize * resolvedLineHeight * 6,
@@ -38,7 +39,6 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
     selectedFont,
   ]);
   const content = fitted.formatted;
-  const hasBgHighlight = content.includes('[[');
 
   React.useEffect(() => {
     const target = elementRef.current;
@@ -88,7 +88,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
                     color: theme.colors.hlTextColor || '#000',
                     WebkitBoxDecorationBreak: 'clone',
                     boxDecorationBreak: 'clone' as any,
-                    fontFamily: theme.typography.fontFamily
+                    fontFamily: safeFontFamily
                   }}
                 >
                   {renderEmojiText(s, `bg-hl-${i}`)}
@@ -109,7 +109,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
     const finalParts: (string | React.ReactNode)[] = [];
     parts.forEach(part => {
       if (typeof part === 'string') {
-        const split = part.split(/\*\*(.*?)\*\*/g);
+        const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
           if (i % 2 === 1) {
             finalParts.push(<span key={`bold-${i}`} className="font-black" style={{ fontWeight: 900 }}>{renderEmojiText(s, `bold-${i}`)}</span>);
@@ -128,7 +128,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
   return (
     <p
       ref={elementRef}
-      className={`w-full ${theme.typography.paragraph} ${hasBgHighlight ? '!leading-[1.62]' : '!leading-[1.38]'}`}
+      className={`w-full ${theme.typography.paragraph} ${hasBgHighlight ? '!leading-[1.72]' : '!leading-[1.38]'}`}
       style={{ ...style, whiteSpace: 'pre-line', textWrap: undefined }}
       data-block-type="PARAGRAPH"
     >

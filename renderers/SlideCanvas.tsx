@@ -401,6 +401,11 @@ export const SlideCanvas: React.FC<{
     ));
   };
 
+  const hasCenteredBox = slide.blocks.some((block) =>
+    block.type === 'BOX' && ((block.options?.align || block.options?.textAlign) === 'center'),
+  );
+  const defaultTextAlign = hasCenteredBox ? 'center' as const : undefined;
+
   const renderBoxGroup = (boxBlocks: Block[], startIndex: number) => {
     const groupAlign = effectiveOptions.boxGroupAlign || 'left';
     const groupLayout = effectiveOptions.boxGroupLayout || 'auto';
@@ -438,7 +443,7 @@ export const SlideCanvas: React.FC<{
           localIndex,
           startIndex + localIndex,
           { totalInGroup: total, groupLayout: resolvedLayout },
-          { defaultWidthPercent: effectiveOptions.contentWidthPercent },
+          { defaultWidthPercent: effectiveOptions.contentWidthPercent, defaultTextAlign },
         )}
       </React.Fragment>
     );
@@ -495,7 +500,7 @@ export const SlideCanvas: React.FC<{
                   localIndex,
                   startIndex + localIndex,
                   { totalInGroup: total, groupLayout: resolvedLayout },
-                  { defaultWidthPercent: effectiveOptions.contentWidthPercent },
+                  { defaultWidthPercent: effectiveOptions.contentWidthPercent, defaultTextAlign },
                 )}
               </div>
             );
@@ -540,7 +545,7 @@ export const SlideCanvas: React.FC<{
             0,
             index,
             undefined,
-            { defaultWidthPercent: effectiveOptions.contentWidthPercent },
+            { defaultWidthPercent: effectiveOptions.contentWidthPercent, defaultTextAlign },
           )}
         </React.Fragment>,
       );
@@ -874,7 +879,7 @@ export const SlideCanvas: React.FC<{
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `radial-gradient(circle at 20% 15%, rgba(255,255,255,0.14), transparent 36%), linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18))`,
+                  background: `radial-gradient(circle at 20% 15%, rgba(255,255,255,0.08), transparent 34%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06))`,
                 }}
               />
             </div>
@@ -964,9 +969,9 @@ export const SlideCanvas: React.FC<{
         );
       }
 
-      const cinematicOverlayStrength = effectiveOptions.backgroundOverlayStrength ?? (templateDef.name === 'CINEMATIC_BG' ? 0.42 : 0);
-      const cinematicBlur = effectiveOptions.backgroundBlur ?? (templateDef.name === 'CINEMATIC_BG' ? 12 : 0);
-      const cinematicOverlayColor = effectiveOptions.backgroundOverlayColor || effectiveOptions.black || '#141414';
+      const cinematicOverlayStrength = effectiveOptions.backgroundOverlayStrength ?? (templateDef.name === 'CINEMATIC_BG' ? 0.32 : 0);
+      const cinematicBlur = effectiveOptions.backgroundBlur ?? (templateDef.name === 'CINEMATIC_BG' ? 0 : 0);
+      const cinematicOverlayColor = effectiveOptions.backgroundOverlayColor || '#1c1c20';
       const preserveHighlights = effectiveOptions.preserveHighlights ?? 0.25;
       const socialShellStyle = isSocialPost
         ? {
@@ -1007,19 +1012,21 @@ export const SlideCanvas: React.FC<{
                   <div
                     className="absolute inset-0"
                     style={{
-                      background: `linear-gradient(180deg, rgba(0,0,0,${Math.max(0.04, 0.08 + cinematicOverlayStrength * 0.2 - preserveHighlights * 0.08)}) 0%, rgba(0,0,0,${Math.max(0.12, 0.18 + cinematicOverlayStrength * 0.32 - preserveHighlights * 0.1)}) 45%, rgba(0,0,0,${Math.max(0.18, 0.26 + cinematicOverlayStrength * 0.38 - preserveHighlights * 0.14)}) 100%)`,
+                      background: `linear-gradient(180deg, ${hexToRgba(cinematicOverlayColor, Math.max(0.06, 0.1 + cinematicOverlayStrength * 0.16 - preserveHighlights * 0.04))} 0%, ${hexToRgba(cinematicOverlayColor, Math.max(0.14, 0.18 + cinematicOverlayStrength * 0.28 - preserveHighlights * 0.06))} 48%, ${hexToRgba(cinematicOverlayColor, Math.max(0.22, 0.28 + cinematicOverlayStrength * 0.34 - preserveHighlights * 0.08))} 100%)`,
                     }}
                   />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: `radial-gradient(circle at center, ${hexToRgba(cinematicOverlayColor, 0.04 + cinematicOverlayStrength * 0.08)} 0%, ${hexToRgba(cinematicOverlayColor, 0.12 + cinematicOverlayStrength * 0.16)} 34%, transparent 72%)`,
-                      backdropFilter: `blur(${cinematicBlur}px) saturate(${1 + (effectiveOptions.liftShadows ?? 0.2) * 0.35})`,
-                      WebkitBackdropFilter: `blur(${cinematicBlur}px) saturate(${1 + (effectiveOptions.liftShadows ?? 0.2) * 0.35})`,
-                      maskImage: 'radial-gradient(circle at center, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.78) 24%, rgba(0,0,0,0.28) 52%, transparent 78%)',
-                      WebkitMaskImage: 'radial-gradient(circle at center, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.78) 24%, rgba(0,0,0,0.28) 52%, transparent 78%)',
-                    }}
-                  />
+                  {cinematicBlur > 0 && (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backdropFilter: `blur(${cinematicBlur}px) saturate(${1 + (effectiveOptions.liftShadows ?? 0.2) * 0.2})`,
+                        WebkitBackdropFilter: `blur(${cinematicBlur}px) saturate(${1 + (effectiveOptions.liftShadows ?? 0.2) * 0.2})`,
+                        opacity: Math.min(0.42, 0.08 + cinematicOverlayStrength * 0.22),
+                        maskImage: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.22) 72%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.55) 42%, rgba(0,0,0,0.22) 72%, transparent 100%)',
+                      }}
+                    />
+                  )}
                 </>
               )}
             </div>

@@ -44,7 +44,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
           const split = part.split(/\[\[([\s\S]*?)\]\]/g);
           split.forEach((s, i) => {
             if (i % 2 === 1) {
-              newParts.push(<span key={`bg-hl-${i}`} className="inline px-4 py-1 rounded-xl mx-1 font-black" style={{ backgroundColor: theme.colors.hlBgColor || '#fff', color: theme.colors.hlTextColor || '#000', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' as any, fontFamily: theme.typography.fontFamily }}>{renderEmojiText(s, `bg-hl-${i}`)}</span>);
+              newParts.push(<span key={`bg-hl-${i}`} className="inline px-4 py-1 rounded-xl mx-1 font-black" style={{ backgroundColor: theme.colors.hlBgColor || '#fff', color: theme.colors.hlTextColor || '#000', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' as any, fontFamily: safeFontFamily }}>{renderEmojiText(s, `bg-hl-${i}`)}</span>);
             } else if (s !== "") { newParts.push(s); }
           });
         } else { newParts.push(part); }
@@ -54,7 +54,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
     const finalParts: (string | React.ReactNode)[] = [];
     parts.forEach(part => {
       if (typeof part === 'string') {
-        const split = part.split(/\*\*(.*?)\*\*/g);
+        const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
           if (i % 2 === 1) { finalParts.push(<span key={`bold-${i}`} className="font-black" style={{ fontWeight: 900 }}>{renderEmojiText(s, `bold-${i}`)}</span>); }
           else if (s !== "") { finalParts.push(s); }
@@ -89,7 +89,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
   const computedMinHeight = isHeroBox ? '360px' : isDualBox ? '280px' : '220px';
   const computedWidth = isGridMember ? '100%' : isHeroBox ? 'min(100%, 760px)' : '100%';
   const resolvedFontSize = typeof computedFontSize === 'number' ? computedFontSize : parseInt(computedFontSize, 10);
-  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.52 : 1.28);
+  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.62 : 1.28);
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
     availableWidth: availableBox.width || (isHeroBox ? 620 : isDualBox ? 420 : 360),
     availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * (isHeroBox ? 4 : 5),
@@ -198,7 +198,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         </div>
         <div 
           ref={textRef}
-          className={`${hasBgHighlight ? '!leading-[1.5]' : '!leading-[1.2]'} tracking-tight font-black ${align === 'center' ? 'mt-4' : ''}`}
+          className={`${hasBgHighlight ? '!leading-[1.68]' : '!leading-[1.2]'} tracking-tight font-black ${align === 'center' ? 'mt-4' : ''}`}
           style={{
             fontSize: `${fitted.effectiveFontSize}px`,
             fontWeight: block.options?.fontWeight || 900,
