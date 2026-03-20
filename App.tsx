@@ -10,6 +10,7 @@ import {
   applyBrandThemeToSlides,
   applyProjectClientToSlide,
   createBrandThemeFromPreset,
+  getFontFaceDefinition,
   getBrandPaletteSwatches,
   getPreferredFontsForInjection,
   mergeSlideOptionsWithBrandTheme,
@@ -136,12 +137,21 @@ const normalizeRenderedText = (value: string) =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-const supportsManualLineBreakControl = (block: Block) =>
+const supportsRenderedTextSync = (block: Block) =>
   block.type === 'TITLE'
   || block.type === 'PARAGRAPH'
   || block.type === 'CARD'
   || block.type === 'BADGE'
   || block.type === 'BOX';
+
+const supportsFontWeightControl = (block: Block) =>
+  block.type === 'TITLE'
+  || block.type === 'PARAGRAPH'
+  || block.type === 'LIST'
+  || block.type === 'CARD'
+  || block.type === 'BADGE'
+  || block.type === 'BOX'
+  || block.type === 'USER';
 
 const getEffectiveBlockFontSize = (block: Block, allBlocks?: Block[]) => {
   if (typeof block.options?.fontSize === 'number' && !Number.isNaN(block.options.fontSize)) {
@@ -151,9 +161,9 @@ const getEffectiveBlockFontSize = (block: Block, allBlocks?: Block[]) => {
   switch (block.type) {
     case 'TITLE': {
       const size = block.options?.size || 'md';
-      if (size === 'sm') return 64;
+      if (size === 'sm') return 56;
       if (size === 'lg') return 180;
-      return 92;
+      return 80;
     }
     case 'PARAGRAPH':
       return 32;
@@ -1001,23 +1011,13 @@ const App: React.FC = () => {
     console.log('Injecting fonts:', preferredFonts.map(f => `${f.family}${f.clientId ? ` (${f.clientId})` : ''}`));
 
     const css = preferredFonts.map(font => {
-      // Handle URLs with query parameters
-      const cleanUrl = font.url.split('?')[0];
-      const ext = cleanUrl.split('.').pop()?.toLowerCase();
-      
-      let format = '';
-      if (ext === 'ttf') format = "format('truetype')";
-      else if (ext === 'otf') format = "format('opentype')";
-      else if (ext === 'woff') format = "format('woff')";
-      else if (ext === 'woff2') format = "format('woff2')";
-      
-      // Ensure font family is properly quoted
+      const definition = getFontFaceDefinition(font);
       return `
         @font-face {
-          font-family: '${font.family}';
-          src: url('${font.url}') ${format};
-          font-weight: normal;
-          font-style: normal;
+          font-family: '${definition.family}';
+          src: url('${definition.url}') ${definition.format};
+          font-weight: ${definition.weight};
+          font-style: ${definition.style};
           font-display: swap;
         }
       `;
@@ -1082,8 +1082,7 @@ const App: React.FC = () => {
 
             const block = slide.blocks[blockIndex];
             if (!block) return;
-            if (block.type !== 'TITLE' && block.type !== 'PARAGRAPH') return;
-            if (block.options?.lineBreakMode === 'manual') return;
+            if (!supportsRenderedTextSync(block)) return;
             if (typeof block.content !== 'string') return;
             if (block.content.includes('[[') || block.content.includes('**')) return;
 
@@ -1667,7 +1666,7 @@ const App: React.FC = () => {
                       <div className="space-y-2">
                         <label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Fonte Destaque Global</label>
                         <select
-                          value={currentBrandTheme.fontDestaque || 'Instrument Serif'}
+                          value={currentBrandTheme.fontDestaque || currentBrandTheme.fontPadrão || 'Inter'}
                           onChange={(e) => updateGlobalProperty(['brandTheme', 'fontDestaque'], e.target.value)}
                           className="w-full bg-zinc-950/40 border border-white/5 rounded-2xl py-3.5 px-4 text-[11px] font-bold text-white outline-none focus:border-brand/50 transition-all"
                         >
@@ -1755,19 +1754,6 @@ const App: React.FC = () => {
                             ) : block.type !== 'SPACER' ? (
                               <>
                                 <SafeTextArea value={(Array.isArray(block.content) ? block.content.join('\n') : block.content as string) || ''} onChange={(val) => updateSlideProperty(['blocks', bIdx, 'content'], block.type === 'LIST' ? val.split('\n') : val)} className="w-full bg-black/60 border border-white/5 rounded-2xl p-5 text-[13px] font-medium text-white outline-none focus:border-brand/50 min-h-[120px] custom-scrollbar resize-none transition-all" placeholder="Digite o conteúdo do slide aqui..." />
-                                {supportsManualLineBreakControl(block) && (
-                                  <div className="space-y-2">
-                                    <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Quebra de Linha</span>
-                                    <select
-                                      value={block.options?.lineBreakMode || 'auto'}
-                                      onChange={(e) => updateSlideProperty(['blocks', bIdx, 'options', 'lineBreakMode'], e.target.value)}
-                                      className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-4 text-[10px] font-bold text-white outline-none appearance-none cursor-pointer"
-                                    >
-                                      <option value="auto">Automática</option>
-                                      <option value="manual">Manual</option>
-                                    </select>
-                                  </div>
-                                )}
                               </>
                             ) : null}
                             
@@ -1776,7 +1762,7 @@ const App: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                       <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Estilo</span>
-                                      <select value={block.options?.fontVariant || 'padrão'} onChange={(e) => updateSlideProperty(['blocks', bIdx, 'options', 'fontVariant'], e.target.value)} className="w-full bg-black/60 border border-white/5 rounded-xl py-2.5 px-3 text-[10px] font-bold text-white outline-none appearance-none cursor-pointer"><option value="padrão">Padrão</option><option value="destaque">Destaque</option></select>
+                                      <select value={block.options?.fontVariant || (block.type === 'TITLE' ? 'destaque' : 'padrão')} onChange={(e) => updateSlideProperty(['blocks', bIdx, 'options', 'fontVariant'], e.target.value)} className="w-full bg-black/60 border border-white/5 rounded-xl py-2.5 px-3 text-[10px] font-bold text-white outline-none appearance-none cursor-pointer"><option value="padrão">Padrão</option><option value="destaque">Destaque</option></select>
                                     </div>
                                     <StepperNumberControl
                                       label="Tamanho"
@@ -1787,6 +1773,24 @@ const App: React.FC = () => {
                                       onChange={(value) => updateSlideProperty(['blocks', bIdx, 'options', 'fontSize'], value)}
                                     />
                                 </div>
+                                {supportsFontWeightControl(block) && (
+                                  <StepperNumberControl
+                                    label="Peso"
+                                    value={block.options?.fontWeight ?? (
+                                      block.type === 'TITLE'
+                                        ? ((block.options?.fontVariant || 'padrão') === 'destaque' ? 400 : 900)
+                                        : block.type === 'BOX'
+                                          ? 900
+                                          : block.type === 'USER'
+                                            ? 900
+                                            : ((block.options?.fontVariant || 'padrão') === 'destaque' ? 400 : 300)
+                                    )}
+                                    min={100}
+                                    max={900}
+                                    step={100}
+                                    onChange={(value) => updateSlideProperty(['blocks', bIdx, 'options', 'fontWeight'], value)}
+                                  />
+                                )}
                                 {block.type !== 'IMAGE' && (
                                   <TransformControl label="Largura (%)" value={block.options?.widthPercent ?? currentSlide?.options?.contentWidthPercent ?? 100} min={20} max={100} step={1} onChange={(v) => updateSlideProperty(['blocks', bIdx, 'options', 'widthPercent'], v)} />
                                 )}
@@ -1857,6 +1861,44 @@ const App: React.FC = () => {
                           <p className="text-[9px] text-zinc-500 uppercase tracking-widest pl-6">Controle a largura da area de conteudo e a numeracao</p>
                         </div>
                         <TransformControl label="Area de Texto (%)" value={currentSlide?.options?.contentWidthPercent ?? 100} min={20} max={100} step={1} onChange={(v) => updateSlideProperty(['options', 'contentWidthPercent'], v)} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Alinhamento Horizontal</span>
+                            <div className="flex bg-black/60 p-1 rounded-xl border border-white/5 gap-1">
+                              {[
+                                { id: 'left', icon: AlignLeft },
+                                { id: 'center', icon: AlignCenter },
+                                { id: 'right', icon: AlignRight }
+                              ].map(align => (
+                                <button
+                                  key={align.id}
+                                  onClick={() => updateSlideProperty(['options', 'contentHorizontalAlign'], align.id)}
+                                  className={`flex-1 py-2 flex items-center justify-center rounded-lg transition-all ${((currentSlide?.options?.contentHorizontalAlign || 'left') === align.id) ? 'bg-zinc-800 text-brand' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                  <align.icon size={14} />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Alinhamento Vertical</span>
+                            <div className="flex bg-black/60 p-1 rounded-xl border border-white/5 gap-1">
+                              {[
+                                { id: 'top', icon: AlignStartVertical },
+                                { id: 'center', icon: AlignCenterVertical },
+                                { id: 'bottom', icon: AlignEndVertical }
+                              ].map(align => (
+                                <button
+                                  key={align.id}
+                                  onClick={() => updateSlideProperty(['options', 'contentVerticalAlign'], align.id)}
+                                  className={`flex-1 py-2 flex items-center justify-center rounded-lg transition-all ${((currentSlide?.options?.contentVerticalAlign || 'center') === align.id) ? 'bg-zinc-800 text-brand' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                  <align.icon size={14} />
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-3">
                           <input
                             type="number"
@@ -1940,7 +1982,7 @@ const App: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-1 gap-5">
                           <div className="space-y-2"><label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Fonte Padrão</label><select value={currentSlideTheme.fontPadrão || 'Inter'} onChange={(e) => updateSlideProperty(['options', 'fontPadrão'], e.target.value)} className="w-full bg-zinc-950/40 border border-white/5 rounded-2xl py-3.5 px-4 text-[11px] font-bold text-white outline-none focus:border-brand/50 transition-all">{allFontOptions.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></div>
-                          <div className="space-y-2"><label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Fonte Destaque</label><select value={currentSlideTheme.fontDestaque || 'Instrument Serif'} onChange={(e) => updateSlideProperty(['options', 'fontDestaque'], e.target.value)} className="w-full bg-zinc-950/40 border border-white/5 rounded-2xl py-3.5 px-4 text-[11px] font-bold text-white outline-none focus:border-brand/50 transition-all">{allFontOptions.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></div>
+                          <div className="space-y-2"><label className="text-[9px] font-black uppercase text-zinc-500 tracking-widest px-1">Fonte Destaque</label><select value={currentSlideTheme.fontDestaque || currentSlideTheme.fontPadrão || 'Inter'} onChange={(e) => updateSlideProperty(['options', 'fontDestaque'], e.target.value)} className="w-full bg-zinc-950/40 border border-white/5 rounded-2xl py-3.5 px-4 text-[11px] font-bold text-white outline-none focus:border-brand/50 transition-all">{allFontOptions.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}</select></div>
                           <TransformControl label="Margens" value={currentSlide?.options?.padding ?? 80} min={20} max={200} step={4} onChange={(v) => updateSlideProperty(['options', 'padding'], v)} />
                           <TransformControl label="Espaçamento" value={currentSlide?.options?.blockGap ?? 24} min={0} max={160} step={2} onChange={(v) => updateSlideProperty(['options', 'blockGap'], v)} />
                         </div>
@@ -2054,10 +2096,10 @@ const App: React.FC = () => {
                            )}
                            <div className="grid grid-cols-2 gap-6">
                              <TransformControl label={currentSlide?.template === 'PREMIUM_GLASS' ? ((imageConfig.boxOverlay || 'light') === 'dark' ? 'Potência do Dark Glass' : 'Potência do Light Glass') : 'Força do Overlay'} value={currentSlide?.options?.backgroundOverlayStrength ?? (currentSlide?.template === 'PREMIUM_GLASS' ? 0.42 : currentSlide?.template === 'CINEMATIC_BG' ? 0.42 : 0.55)} min={0} max={1} step={0.01} onChange={(v) => updateSlideProperty(['options', 'backgroundOverlayStrength'], v)} />
-                             <TransformControl label="Blur de Leitura" value={currentSlide?.template === 'FADE' ? (currentSlide?.options?.fadeBlur ?? 14) : (currentSlide?.options?.backgroundBlur ?? 12)} min={0} max={40} step={1} onChange={(v) => updateSlideProperty(currentSlide?.template === 'FADE' ? ['options', 'fadeBlur'] : ['options', 'backgroundBlur'], v)} />
+                             <TransformControl label="Blur de Leitura" value={currentSlide?.template === 'FADE' ? (currentSlide?.options?.fadeBlur ?? 0) : (currentSlide?.options?.backgroundBlur ?? 12)} min={0} max={40} step={1} onChange={(v) => updateSlideProperty(currentSlide?.template === 'FADE' ? ['options', 'fadeBlur'] : ['options', 'backgroundBlur'], v)} />
                            </div>
                            {currentSlide?.template === 'FADE' && (
-                             <TransformControl label="Força do Fade" value={currentSlide?.options?.fadeStrength ?? 0.55} min={0} max={1} step={0.01} onChange={(v) => updateSlideProperty(['options', 'fadeStrength'], v)} highlight />
+                             <TransformControl label="Força do Fade" value={currentSlide?.options?.fadeStrength ?? 0.38} min={0} max={1} step={0.01} onChange={(v) => updateSlideProperty(['options', 'fadeStrength'], v)} highlight />
                            )}
                            {currentSlide?.template === 'CINEMATIC_BG' && (
                              <div className="grid grid-cols-2 gap-6">

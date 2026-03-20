@@ -11,6 +11,8 @@ export function UserRenderer({ block, theme }: { block: Block; theme: Theme }) {
   const hideName = block.options?.hideName;
   const isLarge = block.options?.size === 'lg';
   const nameColor = block.options?.nameColor || block.options?.color || theme.colors.textPrimary;
+  const nameWeight = block.options?.fontWeight || 900;
+  const handleWeight = Math.max(100, Math.min(900, nameWeight - 200));
   
   // Font Size Logic: use fontSize if provided, otherwise fallback to legacy size classes
   const baseFontSize = block.options?.fontSize ? block.options.fontSize : (isLarge ? 32 : 20);
@@ -34,7 +36,7 @@ export function UserRenderer({ block, theme }: { block: Block; theme: Theme }) {
         {!hideName && (
           <span 
             className="font-black leading-none tracking-tight mb-1"
-            style={{ fontSize: `${baseFontSize}px`, fontFamily: safeFontFamily, color: nameColor }}
+            style={{ fontSize: `${baseFontSize}px`, fontFamily: safeFontFamily, color: nameColor, fontWeight: nameWeight }}
             data-block-type="USER"
           >
             {renderEmojiText(name, 'user-name')}
@@ -45,7 +47,8 @@ export function UserRenderer({ block, theme }: { block: Block; theme: Theme }) {
           style={{ 
             fontSize: `${handleFontSize}px`,
             color: block.options?.handleColor || theme.colors.accent,
-            fontFamily: safeFontFamily
+            fontFamily: safeFontFamily,
+            fontWeight: handleWeight
           }}
           data-block-type="USER"
         >

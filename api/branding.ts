@@ -137,7 +137,7 @@ const createBrandThemeFromPreset = (preset: {
     white,
     black,
     fontPadrao: preset.font_padrao || DEFAULT_PRIMARY_FONT,
-    fontDestaque: preset.font_destaque || DEFAULT_SECONDARY_FONT,
+    fontDestaque: preset.font_destaque || preset.font_padrao || DEFAULT_PRIMARY_FONT,
   };
 };
 
@@ -256,7 +256,8 @@ export default async function handler(_req: any, res: any) {
         readStringPreference(preferences, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
           || readStringPreference(imageSettings, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
           || fontFallbacks.secondary
-          || DEFAULT_SECONDARY_FONT,
+          || fontPadrao
+          || DEFAULT_PRIMARY_FONT,
         fonts,
       );
 

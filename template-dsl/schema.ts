@@ -13,6 +13,7 @@ export const blockSchema = z.object({
     customIcon: z.string().optional(),
     align: z.enum(['left', 'center', 'right']).optional(),
     fontSize: z.number().optional(),
+    fontWeight: z.number().min(100).max(900).optional(),
     color: z.string().optional(),
     letterSpacing: z.number().optional(),
     lineHeight: z.number().optional(),
@@ -90,6 +91,8 @@ export const slideSchema = z.object({
     fontPadrão: z.string().optional(),
     fontDestaque: z.string().optional(),
     contentWidthPercent: z.number().min(10).max(100).optional(),
+    contentHorizontalAlign: z.enum(['left', 'center', 'right']).optional(),
+    contentVerticalAlign: z.enum(['top', 'center', 'bottom']).optional(),
     backgroundOverlayStrength: z.number().min(0).max(1).optional(),
     backgroundOverlayColor: z.string().optional(),
     backgroundBlur: z.number().min(0).max(40).optional(),
@@ -121,6 +124,8 @@ export const customFontSchema = z.object({
   name: z.string(),
   family: z.string(),
   url: z.string().url(),
+  clientId: z.string().optional(),
+  weightRange: z.string().optional(),
 });
 
 export const brandThemeSchema = z.object({

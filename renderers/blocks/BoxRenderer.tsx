@@ -4,7 +4,7 @@ import { Block, Theme } from '../../types';
 import * as Icons from 'lucide-react';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
-import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
+import { fitTextToConstraint } from '../../utils/text-fit';
 
 interface BoxRendererProps {
   block: Block;
@@ -17,15 +17,16 @@ interface BoxRendererProps {
 }
 
 export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, totalInGroup = 1, groupLayout = 'auto', onEditIcon }: BoxRendererProps) {
-  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
-  const text = formatTextForRender(((block.content || '') as string), lineBreakMode);
+  const rawText = ((block.content || '') as string);
   const iconName = block.options?.icon;
   const customIcon = block.options?.customIcon;
   const variant = block.options?.variant || 'default';
   const align = block.options?.align || (isGridMember ? 'center' : 'left');
-  const hasBgHighlight = text.includes('[[');
+  const hasBgHighlight = rawText.includes('[[');
   const customPadding = block.options?.padding;
   const fontVariant = block.options?.fontVariant || 'padrão';
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [availableBox, setAvailableBox] = React.useState({ width: 0, height: 0 });
 
   const selectedFont = fontVariant === 'destaque' 
     ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif') 
@@ -79,7 +80,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
           : '40px';
   const computedRadius = isHeroBox ? '72px' : isDualBox ? '60px' : '48px';
   const computedFontSize = block.options?.fontSize
-    ? `${block.options.fontSize}px`
+    ? block.options.fontSize
     : isHeroBox
       ? '48px'
       : isDualBox
@@ -87,6 +88,52 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         : '30px';
   const computedMinHeight = isHeroBox ? '360px' : isDualBox ? '280px' : '220px';
   const computedWidth = isGridMember ? '100%' : isHeroBox ? 'min(100%, 760px)' : '100%';
+  const resolvedFontSize = typeof computedFontSize === 'number' ? computedFontSize : parseInt(computedFontSize, 10);
+  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.5 : 1.2);
+  const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
+    availableWidth: availableBox.width || (isHeroBox ? 620 : isDualBox ? 420 : 360),
+    availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * (isHeroBox ? 4 : 5),
+    fontSize: resolvedFontSize,
+    fontFamily: selectedFont,
+    fontWeight: block.options?.fontWeight || 900,
+    lineHeight: resolvedLineHeight,
+    letterSpacing: block.options?.letterSpacing,
+    maxLines: isHeroBox ? 4 : isDualBox ? 4 : 5,
+    minFontSize: Math.max(20, Math.round(resolvedFontSize * 0.72)),
+    overflow: 'shrink',
+    role: 'box',
+  }), [
+    availableBox.height,
+    availableBox.width,
+    block.options?.fontWeight,
+    block.options?.letterSpacing,
+    isDualBox,
+    isHeroBox,
+    rawText,
+    resolvedFontSize,
+    resolvedLineHeight,
+    selectedFont,
+  ]);
+  const text = fitted.formatted;
+
+  React.useEffect(() => {
+    const target = textRef.current;
+    if (!target) return;
+
+    const measure = () => {
+      setAvailableBox({
+        width: target.clientWidth || 0,
+        height: target.clientHeight || 0,
+      });
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
   
   const bgColor = isOutlined ? 'transparent' : (block.options?.color ? `${block.options.color}20` : (theme.colors.cardBg || theme.colors.accent));
   const textColor = block.options?.color || theme.colors.cardTextColor || (isOutlined ? theme.colors.textPrimary : '#000000');
@@ -149,8 +196,15 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
           </div>
         </div>
         <div 
+          ref={textRef}
           className={`${hasBgHighlight ? '!leading-[1.5]' : '!leading-[1.2]'} tracking-tight font-black ${align === 'center' ? 'mt-4' : ''}`}
-          style={{ fontSize: computedFontSize, whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal', textWrap: lineBreakMode === 'manual' ? undefined : 'pretty' }}
+          style={{
+            fontSize: `${fitted.effectiveFontSize}px`,
+            fontWeight: block.options?.fontWeight || 900,
+            whiteSpace: 'pre-line',
+            textWrap: undefined,
+            lineHeight: resolvedLineHeight,
+          }}
         >
           {renderRichText(text)}
         </div>

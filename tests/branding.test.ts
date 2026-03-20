@@ -5,6 +5,7 @@ import {
   applyBrandThemeToSlides,
   createDarkenedOverlayColor,
   createBrandThemeFromPreset,
+  getFontFaceDefinition,
   getBrandPaletteSwatches,
   getDirectionalSampleRegion,
   getPreferredFontsForInjection,
@@ -135,6 +136,21 @@ const preferredFonts = getPreferredFontsForInjection(
 
 assert.equal(preferredFonts.length, 2);
 assert.equal(preferredFonts[0].url, 'https://cdn.example.com/active-sora.ttf');
+
+const variableFontFace = getFontFaceDefinition({
+  family: 'Sora-VariableFont_wght',
+  name: 'Sora-VariableFont_wght',
+  url: 'https://cdn.example.com/sora.ttf',
+} as any);
+const staticFontFace = getFontFaceDefinition({
+  family: 'Ritchain',
+  name: 'Ritchain',
+  url: 'https://cdn.example.com/ritchain.otf',
+} as any);
+
+assert.equal(variableFontFace.weight, '100 900');
+assert.equal(variableFontFace.style, 'normal');
+assert.equal(staticFontFace.weight, 'normal');
 
 assert.equal(normalizeFontFamilyName(' Playfair-Display '), 'playfairdisplay');
 assert.equal(

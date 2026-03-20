@@ -4,7 +4,7 @@ import { Block, Theme } from '../../types';
 import * as Icons from 'lucide-react';
 import { quoteFontFamily } from '../../utils/branding';
 import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
-import { formatTextForRender, resolveLineBreakMode } from '../../utils/text-layout';
+import { fitTextToConstraint } from '../../utils/text-fit';
 
 interface CardRendererProps {
   block: Block;
@@ -15,20 +15,66 @@ interface CardRendererProps {
 export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
   const customIcon = block.options?.customIcon;
   const iconName = block.options?.icon;
-  const lineBreakMode = resolveLineBreakMode(block.options?.lineBreakMode);
-  const text = formatTextForRender(Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string, lineBreakMode);
+  const rawText = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
   const highlight = block.options?.highlight;
   const variant = block.options?.variant || 'default';
-  const hasBgHighlight = text.includes('[[');
+  const hasBgHighlight = rawText.includes('[[');
   const isAccent = variant === 'accent' || variant === 'box' || variant === 'default';
   const opacity = theme.colors.cardOpacity !== undefined ? theme.colors.cardOpacity : 1;
   const cardColor = theme.colors.cardBg || theme.colors.accent;
   const textColor = theme.colors.cardTextColor || (isAccent ? '#000000' : theme.colors.textPrimary);
   const fontVariant = block.options?.fontVariant || 'padrão';
+  const textRef = React.useRef<HTMLDivElement>(null);
+  const [availableBox, setAvailableBox] = React.useState({ width: 0, height: 0 });
 
   const selectedFont = fontVariant === 'destaque' 
     ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif') 
     : theme.typography.fontFamily;
+  const resolvedFontSize = block.options?.fontSize || 30;
+  const resolvedLineHeight = block.options?.lineHeight ?? 1.3;
+  const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
+    availableWidth: availableBox.width || 640,
+    availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * 4,
+    fontSize: resolvedFontSize,
+    fontFamily: selectedFont,
+    fontWeight: block.options?.fontWeight || (fontVariant === 'destaque' ? 400 : 300),
+    lineHeight: resolvedLineHeight,
+    letterSpacing: block.options?.letterSpacing,
+    maxLines: 4,
+    minFontSize: Math.max(18, Math.round(resolvedFontSize * 0.78)),
+    overflow: 'shrink',
+    role: 'card',
+  }), [
+    availableBox.height,
+    availableBox.width,
+    block.options?.fontWeight,
+    block.options?.letterSpacing,
+    fontVariant,
+    rawText,
+    resolvedFontSize,
+    resolvedLineHeight,
+    selectedFont,
+  ]);
+  const text = fitted.formatted;
+
+  React.useEffect(() => {
+    const target = textRef.current;
+    if (!target) return;
+
+    const measure = () => {
+      setAvailableBox({
+        width: target.clientWidth || 0,
+        height: target.clientHeight || 0,
+      });
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
 
   // Ensure font family is quoted
   const safeFontFamily = quoteFontFamily(selectedFont, theme.typography.fontFamily);
@@ -109,12 +155,14 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
         </div>
       </div>
       <div 
+        ref={textRef}
         className={`flex-1 ${hasBgHighlight ? '!leading-[1.7]' : '!leading-[1.3]'} tracking-tight`} 
         style={{ 
-          fontWeight: fontVariant === 'destaque' ? 400 : 300,
-          fontSize: block.options?.fontSize ? `${block.options.fontSize}px` : '30px',
-          whiteSpace: lineBreakMode === 'manual' ? 'pre-line' : 'normal',
-          textWrap: lineBreakMode === 'manual' ? undefined : 'pretty'
+          fontWeight: block.options?.fontWeight || (fontVariant === 'destaque' ? 400 : 300),
+          fontSize: `${fitted.effectiveFontSize}px`,
+          lineHeight: resolvedLineHeight,
+          whiteSpace: 'pre-line',
+          textWrap: undefined
         }}
       >
         {renderRichContent()}

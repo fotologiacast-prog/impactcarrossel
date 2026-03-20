@@ -28,7 +28,7 @@ export function ListRenderer({ block, theme }: ListRendererProps) {
     textAlign: block.options?.textAlign || (block.options?.align as any) || 'left',
     color: block.options?.color || undefined,
     fontFamily: safeFontFamily,
-    fontWeight: fontVariant === 'destaque' ? 400 : 300
+    fontWeight: block.options?.fontWeight || (fontVariant === 'destaque' ? 400 : 300)
   };
 
   const renderRichText = (text: string, highlight?: string) => {

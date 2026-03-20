@@ -7,7 +7,7 @@ export const TOKENS: Theme = {
   typography: {
     fontFamily: "'Inter', sans-serif",
     hero: 'text-[100px] leading-[0.9] font-[900] tracking-[-0.05em]',
-    title: 'text-[92px] leading-[0.95] font-[900] tracking-[-0.04em]',
+    title: 'text-[80px] leading-[0.95] font-[900] tracking-[-0.04em]',
     paragraph: 'text-[32px] leading-[1.3] font-light opacity-90', 
     body: 'text-[34px] leading-[1.2] font-light tracking-tight', 
     small: 'text-[22px] font-medium opacity-70',

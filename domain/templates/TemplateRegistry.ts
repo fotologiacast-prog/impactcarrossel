@@ -207,7 +207,21 @@ export const INITIAL_TEMPLATES: TemplateDefinition[] = [
         { type: 'TITLE', content: 'Fade Focus', options: { fontSize: 70 } },
         { type: 'PARAGRAPH', content: 'Leitura suave com profundidade e contraste controlado.', options: { fontSize: 24 } },
       ],
-      options: { theme: 'dark', fadeSide: 'left', fadeStrength: 0.55, fadeBlur: 14 }
+      options: { theme: 'dark', fadeSide: 'left', fadeStrength: 0.38, fadeBlur: 0 }
+    }
+  },
+  {
+    name: 'PNG_STAGE',
+    description: 'Canvas limpo para compor texto com espaco reservado para PNGs.',
+    layoutType: 'EDITORIAL',
+    allowedBlocks: UNIVERSAL_BLOCKS,
+    exampleSlide: {
+      template: 'PNG_STAGE',
+      blocks: [
+        { type: 'TITLE', content: 'Destaque com PNG', options: { fontSize: 80 } },
+        { type: 'PARAGRAPH', content: 'Use este modo para deixar uma area limpa e posicionar overlays PNG com mais liberdade.', options: { fontSize: 24 } },
+      ],
+      options: { theme: 'light', background: '#F7F3EC', text: '#141414', contentHorizontalAlign: 'left', contentVerticalAlign: 'center' }
     }
   },
   { 

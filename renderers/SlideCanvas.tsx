@@ -9,7 +9,9 @@ import { Image as ImageIcon, Box, User, Layers, Package } from 'lucide-react'
 import { Block, BrandTheme, CustomFont, ProjectFX } from '../types'
 import {
   createDarkenedOverlayColor,
+  getFontFaceDefinition,
   getDirectionalSampleRegion,
+  getPreferredFontsForInjection,
   mergeSlideOptionsWithBrandTheme,
   quoteFontFamily,
   rgbToHex,
@@ -51,7 +53,7 @@ export const SlideCanvas: React.FC<{
       typography: {
         ...TOKENS.typography,
         fontFamily: quoteFontFamily(effectiveOptions.fontPadrão, TOKENS.typography.fontFamily),
-        fontFamilySecondary: quoteFontFamily(effectiveOptions.fontDestaque, '"Instrument Serif", serif'),
+        fontFamilySecondary: quoteFontFamily(effectiveOptions.fontDestaque || effectiveOptions.fontPadrão, TOKENS.typography.fontFamily),
       },
       colors: {
         ...TOKENS.colors,
@@ -111,13 +113,13 @@ export const SlideCanvas: React.FC<{
 
   const getDefaultImageBoxHeight = useCallback(() => {
     const position = imageConfig?.position || 'right';
-    return position === 'left' || position === 'right' ? 850 : 540;
+    return position === 'left' || position === 'right' ? 760 : 500;
   }, [imageConfig?.position]);
 
   const getCurrentImageBoxState = useCallback(() => ({
     boxX: imageBoxDraft?.boxX ?? imageConfig?.boxX ?? 0,
     boxY: imageBoxDraft?.boxY ?? imageConfig?.boxY ?? 0,
-    width: imageBoxDraft?.width ?? imageConfig?.width ?? 540,
+    width: imageBoxDraft?.width ?? imageConfig?.width ?? 460,
     height: imageBoxDraft?.height ?? imageConfig?.height ?? getDefaultImageBoxHeight(),
     imageX: imageBoxDraft?.imageX ?? imageConfig?.imageX ?? 0,
     imageY: imageBoxDraft?.imageY ?? imageConfig?.imageY ?? 0,
@@ -578,8 +580,8 @@ export const SlideCanvas: React.FC<{
 
   const getDirectionalGradient = (side: 'left' | 'right' | 'top' | 'bottom', strength: number, color: string) => {
     const normalizedStrength = Math.min(1, Math.max(0, strength / 2));
-    const shadeStrong = hexToRgba(color, Math.min(0.9, 0.26 + normalizedStrength * 0.64));
-    const shadeMid = hexToRgba(color, Math.min(0.62, 0.12 + normalizedStrength * 0.42));
+    const shadeStrong = hexToRgba(color, Math.min(0.72, 0.08 + normalizedStrength * 0.52));
+    const shadeMid = hexToRgba(color, Math.min(0.42, 0.04 + normalizedStrength * 0.24));
     switch (side) {
       case 'right':
         return `linear-gradient(270deg, ${shadeStrong} 0%, ${shadeMid} 42%, transparent 82%)`;
@@ -619,6 +621,42 @@ export const SlideCanvas: React.FC<{
     }
   };
 
+  const getVerticalJustifyClass = () => {
+    const verticalAlign = effectiveOptions.contentVerticalAlign || 'center';
+    return verticalAlign === 'top'
+      ? 'justify-start'
+      : verticalAlign === 'bottom'
+        ? 'justify-end'
+        : 'justify-center';
+  };
+
+  const getHorizontalAlignClass = () => {
+    const horizontalAlign = effectiveOptions.contentHorizontalAlign || 'left';
+    return horizontalAlign === 'center'
+      ? 'items-center'
+      : horizontalAlign === 'right'
+        ? 'items-end'
+        : 'items-start';
+  };
+
+  const getCanvasVerticalItemsClass = () => {
+    const verticalAlign = effectiveOptions.contentVerticalAlign || 'center';
+    return verticalAlign === 'top'
+      ? 'items-start'
+      : verticalAlign === 'bottom'
+        ? 'items-end'
+        : 'items-center';
+  };
+
+  const getHorizontalSelfClass = () => {
+    const horizontalAlign = effectiveOptions.contentHorizontalAlign || 'left';
+    return horizontalAlign === 'center'
+      ? 'mx-auto text-center'
+      : horizontalAlign === 'right'
+        ? 'ml-auto mr-0 text-right'
+        : 'mr-auto ml-0 text-left';
+  };
+
   const getDirectionalMask = (side: 'left' | 'right' | 'top' | 'bottom') => {
     switch (side) {
       case 'right':
@@ -631,6 +669,35 @@ export const SlideCanvas: React.FC<{
       default:
         return 'linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0.92) 24%, rgba(0,0,0,0.62) 52%, rgba(0,0,0,0.18) 78%, transparent 96%)';
     }
+  };
+
+  const getFadeContentMaxWidth = (side: 'left' | 'right' | 'top' | 'bottom', availableCanvasWidth: number) => {
+    if (side === 'left' || side === 'right') {
+      return Math.min(460, availableCanvasWidth * 0.5);
+    }
+    return Math.min(820, availableCanvasWidth * 0.88);
+  };
+
+  const renderSplitAccentEdge = (position: 'left' | 'right' | 'top' | 'bottom') => {
+    const accentColor = effectiveOptions.accent || theme.colors.accent;
+    const commonStyle: React.CSSProperties = {
+      position: 'absolute',
+      pointerEvents: 'none',
+      backgroundColor: accentColor,
+      boxShadow: `0 0 28px ${hexToRgba(accentColor, 0.28)}`,
+      opacity: 0.9,
+    };
+
+    if (position === 'left') {
+      return <div style={{ ...commonStyle, top: 0, bottom: 0, left: -10, width: 10 }} />;
+    }
+    if (position === 'right') {
+      return <div style={{ ...commonStyle, top: 0, bottom: 0, right: -10, width: 10 }} />;
+    }
+    if (position === 'top') {
+      return <div style={{ ...commonStyle, left: 0, right: 0, top: -10, height: 10 }} />;
+    }
+    return <div style={{ ...commonStyle, left: 0, right: 0, bottom: -10, height: 10 }} />;
   };
 
   const renderLayout = () => {
@@ -647,7 +714,7 @@ export const SlideCanvas: React.FC<{
     
     const imageBoxStyle: React.CSSProperties = {
       border: imageConfig?.borderWidth && isFloatingBox ? `${imageConfig.borderWidth}px solid ${imageConfig.borderColor || '#FFFFFF'}` : 'none',
-      boxShadow: imageConfig?.hasShadow && isFloatingBox ? `0 ${imageConfig.hasTornEdges ? '30px 80px' : '40px 120px'} -20px rgba(0,0,0,${imageConfig.hasTornEdges ? '0.15' : '0.8'}), 0 0 100px ${imageConfig.borderColor || theme.colors.accent}${imageConfig.hasTornEdges ? '10' : '40'}` : 'none',
+      boxShadow: imageConfig?.hasShadow && imageConfig?.type === 'IMAGE_GLASS_CARD' ? `0 ${imageConfig.hasTornEdges ? '30px 80px' : '40px 120px'} -20px rgba(0,0,0,${imageConfig.hasTornEdges ? '0.15' : '0.8'}), 0 0 100px ${imageConfig.borderColor || theme.colors.accent}${imageConfig.hasTornEdges ? '10' : '40'}` : 'none',
       transform: isFloatingBox ? `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` : undefined,
       transformOrigin: 'center',
       width: imageConfig?.type === 'IMAGE_BOX' ? `${boxWidth}px` : undefined,
@@ -658,9 +725,9 @@ export const SlideCanvas: React.FC<{
     const clarityIntensity = fx?.clarity || 0;
     const contentFilter = clarityIntensity > 0 ? `contrast(${1 + clarityIntensity * 0.25}) saturate(${1 + clarityIntensity * 0.15}) brightness(${1 - clarityIntensity * 0.05})` : 'none';
     const contentWidthPercent = effectiveOptions.contentWidthPercent ?? 100;
-    const adaptiveTextWidth = Math.max(320, Math.min(620, availableCanvasWidth * Math.min(0.72, contentWidthPercent / 100)));
-    const adaptiveBoxWidth = Math.max(260, Math.min(availableCanvasWidth * 0.58, boxWidth * Math.max(0.7, bScale)));
-    const adaptiveGap = Math.max(28, Math.min(88, sectionGap));
+    const adaptiveTextWidth = Math.max(260, Math.min(520, availableCanvasWidth * Math.min(0.52, (contentWidthPercent / 100) * 0.62)));
+    const adaptiveBoxWidth = Math.max(240, Math.min(availableCanvasWidth * 0.48, boxWidth * Math.max(0.68, bScale)));
+    const adaptiveGap = Math.max(32, Math.min(92, sectionGap + 8));
     const adaptiveHorizontalCompositionWidth = Math.min(
       availableCanvasWidth,
       adaptiveTextWidth + adaptiveBoxWidth + adaptiveGap,
@@ -669,9 +736,13 @@ export const SlideCanvas: React.FC<{
       availableCanvasWidth,
       Math.max(adaptiveTextWidth, adaptiveBoxWidth),
     );
-    const adaptiveHorizontalBoxHeight = Math.max(320, boxHeight * Math.max(0.7, bScale));
-    const adaptiveVerticalBoxHeight = Math.max(260, boxHeight * Math.max(0.7, bScale));
+    const adaptiveHorizontalBoxHeight = Math.max(300, boxHeight * Math.max(0.68, bScale));
+    const adaptiveVerticalBoxHeight = Math.max(240, boxHeight * Math.max(0.68, bScale));
     const imageBoxCursorClass = selectedImageBoxMode === 'image' ? 'cursor-grab' : 'cursor-move';
+    const contentVerticalClass = getVerticalJustifyClass();
+    const contentHorizontalClass = getHorizontalAlignClass();
+    const contentSelfClass = getHorizontalSelfClass();
+    const canvasVerticalItemsClass = getCanvasVerticalItemsClass();
 
     const renderInteractiveImageBox = (heightClassName?: string) => (
       <div
@@ -710,7 +781,7 @@ export const SlideCanvas: React.FC<{
           if (isHorizontal) {
             const isRight = pos === 'right';
             return (
-              <div className="relative h-full w-full flex items-center justify-center" style={{ padding: canvasPadding }}>
+              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={{ padding: canvasPadding }}>
                 <div
                   className={`w-full flex items-center ${isRight ? 'flex-row' : 'flex-row-reverse'}`}
                   style={{
@@ -718,7 +789,7 @@ export const SlideCanvas: React.FC<{
                     gap: `${adaptiveGap}px`,
                   }}
                 >
-                  <div className="min-w-0 z-20 flex-shrink-0" style={{ width: `${Math.min(adaptiveTextWidth, availableCanvasWidth - adaptiveBoxWidth - adaptiveGap)}px` }}>
+                  <div className="min-w-0 z-20 flex-shrink-0" style={{ width: `${Math.max(240, Math.min(adaptiveTextWidth, availableCanvasWidth - adaptiveBoxWidth - adaptiveGap - 24))}px` }}>
                     {renderBlocks()}
                   </div>
                   <div
@@ -737,7 +808,7 @@ export const SlideCanvas: React.FC<{
             const isBottom = pos === 'bottom';
             // Vertical boxes now use consistent width logic
             return (
-              <div className="relative h-full w-full flex items-center justify-center" style={{ padding: canvasPadding }}>
+              <div className={`relative h-full w-full flex ${canvasVerticalItemsClass} justify-center`} style={{ padding: canvasPadding }}>
                 <div
                   className={`w-full flex flex-col items-center ${isBottom ? 'flex-col' : 'flex-col-reverse'}`}
                   style={{
@@ -761,6 +832,15 @@ export const SlideCanvas: React.FC<{
               </div>
             );
           }
+      }
+      if (templateDef.name === 'PNG_STAGE') {
+        return (
+          <div className={`relative h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={{ padding: canvasPadding }}>
+            <div className={`w-full max-w-[820px] flex flex-col min-h-0 ${contentSelfClass}`}>
+              {renderBlocks()}
+            </div>
+          </div>
+        );
       }
       if (imageConfig?.type === 'IMAGE_GLASS_CARD' || templateDef.name === 'GLASS_OVERLAY' || templateDef.name === 'PREMIUM_GLASS') {
         const isDarkBox = imageConfig?.boxOverlay === 'dark';
@@ -798,7 +878,7 @@ export const SlideCanvas: React.FC<{
                 }}
               />
             </div>
-            <div className="relative z-10 h-full w-full flex flex-col justify-center items-center" style={{ padding: canvasPadding }}>
+          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} items-center`} style={{ padding: canvasPadding }}>
               <div
                 style={{
                   ...imageBoxStyle,
@@ -831,20 +911,21 @@ export const SlideCanvas: React.FC<{
         const isSideBySide = pos === 'left' || pos === 'right';
         const isVertical = pos === 'top' || pos === 'bottom';
         const isRightOrBottom = pos === 'right' || pos === 'bottom';
-        if (isSideBySide) return (<div className={`relative h-full w-full flex ${isRightOrBottom ? 'flex-row' : 'flex-row-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className="flex-1 h-full flex flex-col justify-center px-24 z-20 min-w-0">{renderBlocks()}</div><div className="flex-1 h-full relative overflow-hidden bg-zinc-900 border-x border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
-        if (isVertical) return (<div className={`relative h-full w-full flex flex-col ${isRightOrBottom ? 'flex-col' : 'flex-col-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className="flex-1 w-full flex flex-col justify-center z-20" style={{ padding: canvasPadding }}><div className="max-w-[840px] mx-auto w-full">{renderBlocks()}</div></div><div className="w-full h-1/2 overflow-hidden relative border-y border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
+        if (isSideBySide) return (<div className={`relative h-full w-full flex ${isRightOrBottom ? 'flex-row' : 'flex-row-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 h-full flex flex-col ${contentVerticalClass} px-24 z-20 min-w-0`}>{renderSplitAccentEdge(pos === 'right' ? 'right' : 'left')}<div className={`w-full max-w-[840px] ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="flex-1 h-full relative overflow-hidden bg-zinc-900 border-x border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
+        if (isVertical) return (<div className={`relative h-full w-full flex flex-col ${isRightOrBottom ? 'flex-col' : 'flex-col-reverse'}`} style={{ backgroundColor: theme.colors.background }}><div className={`relative flex-1 w-full flex flex-col ${contentVerticalClass} z-20`} style={{ padding: canvasPadding }}>{renderSplitAccentEdge(pos === 'bottom' ? 'bottom' : 'top')}<div className={`max-w-[840px] w-full ${contentSelfClass}`}>{renderBlocks()}</div></div><div className="w-full h-1/2 overflow-hidden relative border-y border-white/5 z-10 transition-all">{imageConfig?.url ? renderImage("w-full h-full", "cover", { transform: `translate(${bX}px, ${bY}px) scale(${bScale}) rotate(${bRot}deg)` }) : (<div className="w-full h-full bg-black/40 flex items-center justify-center text-white/10"><Layers size={100} /></div>)}</div></div>); 
       }
       
       const isFullBg = imageConfig?.type === 'IMAGE_BACKGROUND' || imageConfig?.type === 'IMAGE_SELECT' || templateDef.name === 'MEGA_STATEMENT' || templateDef.name === 'CINEMATIC_BG' || templateDef.name === 'HERO_STATEMENT' || templateDef.name === 'FADE';
       const isSocialPost = templateDef.name === 'SOCIAL_CHECKLIST';
       if (templateDef.name === 'FADE') {
         const fadeSide = effectiveOptions.fadeSide || imageConfig?.position || 'left';
-        const fadeStrength = Math.min(2, (effectiveOptions.fadeStrength ?? 0.55) * 2);
-        const fadeBlur = effectiveOptions.fadeBlur ?? 10;
+        const fadeStrength = Math.min(2, (effectiveOptions.fadeStrength ?? 0.38) * 2);
+        const fadeBlur = effectiveOptions.fadeBlur ?? 0;
         const fadeColor = fadeSampleColor || effectiveOptions.backgroundOverlayColor || effectiveOptions.black || '#141414';
         const layout = getDirectionalContentLayout(fadeSide);
-        const effectiveFadeBlur = Math.max(8, fadeBlur * 1.85);
+        const effectiveFadeBlur = Math.max(6, fadeBlur * 1.45);
         const normalizedFadeStrength = Math.min(1, Math.max(0, fadeStrength / 2));
+        const fadeContentMaxWidth = getFadeContentMaxWidth(fadeSide, availableCanvasWidth);
 
         return (
           <div className="relative h-full w-full overflow-hidden">
@@ -860,19 +941,24 @@ export const SlideCanvas: React.FC<{
                   style={{
                     maskImage: getDirectionalMask(fadeSide),
                     WebkitMaskImage: getDirectionalMask(fadeSide),
-                    opacity: Math.min(0.98, 0.34 + normalizedFadeStrength * 0.56),
+                    opacity: Math.min(0.74, 0.12 + normalizedFadeStrength * 0.34),
                   }}
                 >
                   {renderImage("w-full h-full", "cover", {
                     transform: `translate(${bX}px, ${bY}px) scale(${bScale * 1.06}) rotate(${bRot}deg)`,
-                    filter: `blur(${effectiveFadeBlur}px) brightness(${Math.max(0.3, 0.7 - normalizedFadeStrength * 0.24)}) saturate(${Math.max(0.82, 0.96 - normalizedFadeStrength * 0.08)})`,
+                    filter: `blur(${effectiveFadeBlur}px) brightness(${Math.max(0.42, 0.8 - normalizedFadeStrength * 0.16)}) saturate(${Math.max(0.88, 0.98 - normalizedFadeStrength * 0.04)})`,
                   })}
                 </div>
               )}
               <div className="absolute inset-0" style={{ background: getDirectionalGradient(fadeSide, fadeStrength, fadeColor) }} />
             </div>
-            <div className={`relative z-10 h-full w-full flex flex-col ${layout.wrapper}`} style={{ padding: canvasPadding }}>
-              <div className={`w-full max-w-[820px] flex flex-col justify-center min-h-0 ${layout.panel}`}>{renderBlocks()}</div>
+            <div className={`relative z-10 h-full w-full flex flex-col ${layout.wrapper.replace('justify-center', contentVerticalClass)}`} style={{ padding: canvasPadding }}>
+              <div
+                className={`w-full flex flex-col justify-center min-h-0 ${layout.panel}`}
+                style={{ maxWidth: `${fadeContentMaxWidth}px` }}
+              >
+                {renderBlocks()}
+              </div>
             </div>
           </div>
         );
@@ -938,9 +1024,9 @@ export const SlideCanvas: React.FC<{
               )}
             </div>
           )}
-          <div className="relative z-10 h-full w-full flex flex-col justify-center items-start" style={{ padding: canvasPadding }}>
+          <div className={`relative z-10 h-full w-full flex flex-col ${contentVerticalClass} ${contentHorizontalClass}`} style={{ padding: canvasPadding }}>
             {isProfileMode ? (
-              <div className="relative w-full max-w-[840px] mx-auto">
+              <div className={`relative w-full max-w-[840px] ${contentSelfClass}`}>
                 <div
                   className="absolute inset-0 rounded-[56px] pointer-events-none"
                   style={{
@@ -971,7 +1057,7 @@ export const SlideCanvas: React.FC<{
               </div>
             ) : (
               <div
-                className={`w-full max-w-[840px] mx-auto flex flex-col justify-center min-h-0 ${isSocialPost ? 'border border-white/10 rounded-[40px] p-16 bg-white/5' : ''}`}
+                className={`w-full max-w-[840px] flex flex-col justify-center min-h-0 ${contentSelfClass} ${isSocialPost ? 'border border-white/10 rounded-[40px] p-16 bg-white/5' : ''}`}
                 style={socialShellStyle}
               >
                 {renderBlocks()}
@@ -986,8 +1072,13 @@ export const SlideCanvas: React.FC<{
 
   const customFontsCSS = useMemo(() => {
     if (!customFonts || customFonts.length === 0) return '';
-    return customFonts.map(f => `@font-face { font-family: '${f.family}'; src: url('${f.url}'); font-display: swap; font-weight: normal; font-style: normal; }`).join('\n');
-  }, [customFonts]);
+    return getPreferredFontsForInjection(customFonts, brandTheme?.paletteId)
+      .map((font) => {
+        const definition = getFontFaceDefinition(font);
+        return `@font-face { font-family: '${definition.family}'; src: url('${definition.url}') ${definition.format}; font-display: swap; font-weight: ${definition.weight}; font-style: ${definition.style}; }`;
+      })
+      .join('\n');
+  }, [brandTheme?.paletteId, customFonts]);
 
   const renderImageBoxGuides = () => {
     if (selectedImageBoxMode !== 'box') return null;

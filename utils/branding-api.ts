@@ -143,7 +143,8 @@ export const buildBrandingResponse = ({
       readStringPreference(prefs, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
         || readStringPreference(settings, ['font_destaque', 'fontDestaque', 'fonte_destaque', 'fonteDestaque'])
         || fontFallbacks.secondary
-        || 'Instrument Serif',
+        || fontPadrao
+        || 'Inter',
       fetchedFonts,
     );
 

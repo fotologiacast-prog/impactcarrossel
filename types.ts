@@ -14,6 +14,7 @@ export interface Block {
     align?: 'left' | 'center' | 'right';
     // Text styling overrides
     fontSize?: number;
+    fontWeight?: number;
     color?: string;
     letterSpacing?: number;
     lineHeight?: number;
@@ -114,6 +115,8 @@ export interface SlideDefinition {
     fontPadrão?: string; // New global font setting
     fontDestaque?: string; // New global font setting
     contentWidthPercent?: number;
+    contentHorizontalAlign?: 'left' | 'center' | 'right';
+    contentVerticalAlign?: 'top' | 'center' | 'bottom';
     backgroundOverlayStrength?: number;
     backgroundOverlayColor?: string;
     backgroundBlur?: number;
@@ -154,6 +157,7 @@ export interface CustomFont {
   family: string;
   url: string;
   clientId?: string;
+  weightRange?: string;
 }
 
 export interface BrandTheme {

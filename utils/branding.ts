@@ -131,6 +131,33 @@ const getRelativeLuminance = (value?: string | null): number => {
 export const normalizeFontFamilyName = (value?: string | null): string =>
   (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
+const isVariableFont = (font: Pick<CustomFont, 'family' | 'name' | 'url' | 'weightRange'>): boolean =>
+  Boolean(
+    font.weightRange ||
+    /variablefont|vf[_-]?|_wght|wght|opsz|ital/i.test(`${font.family} ${font.name} ${font.url}`),
+  );
+
+export const getFontFaceDefinition = (
+  font: Pick<CustomFont, 'family' | 'name' | 'url' | 'weightRange'>,
+): { family: string; url: string; format: string; weight: string; style: string } => {
+  const cleanUrl = font.url.split('?')[0];
+  const ext = cleanUrl.split('.').pop()?.toLowerCase();
+
+  let format = '';
+  if (ext === 'ttf') format = "format('truetype')";
+  else if (ext === 'otf') format = "format('opentype')";
+  else if (ext === 'woff') format = "format('woff')";
+  else if (ext === 'woff2') format = "format('woff2')";
+
+  return {
+    family: font.family,
+    url: font.url,
+    format,
+    weight: font.weightRange || (isVariableFont(font) ? '100 900' : 'normal'),
+    style: 'normal',
+  };
+};
+
 export const quoteFontFamily = (value?: string | null, fallback?: string): string => {
   const resolved = (value || fallback || '').trim();
   if (!resolved) return fallback || '';
@@ -211,7 +238,7 @@ export const createBrandThemeFromPreset = (
     hlBgColor,
     hlTextColor: getContrastTextColor(hlBgColor, white, black),
     fontPadrão: resolveFontPreference(preset.font_padrao || DEFAULT_PRIMARY_FONT, fonts),
-    fontDestaque: resolveFontPreference(preset.font_destaque || DEFAULT_SECONDARY_FONT, fonts),
+    fontDestaque: resolveFontPreference(preset.font_destaque || preset.font_padrao || DEFAULT_PRIMARY_FONT, fonts),
     white,
     black,
   };
@@ -292,7 +319,7 @@ export const mergeSlideOptionsWithBrandTheme = (
     hlBgColor,
     hlTextColor: merged.hlTextColor || getContrastTextColor(hlBgColor, white, black),
     fontPadrão: inheritedPrimaryFont || DEFAULT_PRIMARY_FONT,
-    fontDestaque: inheritedSecondaryFont || DEFAULT_SECONDARY_FONT,
+    fontDestaque: inheritedSecondaryFont || inheritedPrimaryFont || DEFAULT_PRIMARY_FONT,
     backgroundOverlayColor: merged.backgroundOverlayColor || black,
     white,
     black,
@@ -344,7 +371,7 @@ export const syncBrandThemeFontFamilies = (
 ): BrandTheme => ({
   ...brandTheme,
   fontPadrão: resolveFontPreference(brandTheme.fontPadrão || DEFAULT_PRIMARY_FONT, fonts),
-  fontDestaque: resolveFontPreference(brandTheme.fontDestaque || DEFAULT_SECONDARY_FONT, fonts),
+  fontDestaque: resolveFontPreference(brandTheme.fontDestaque || brandTheme.fontPadrão || DEFAULT_PRIMARY_FONT, fonts),
 });
 
 export const getPreferredFontsForInjection = (
