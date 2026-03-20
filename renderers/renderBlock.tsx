@@ -40,7 +40,8 @@ export function renderBlock(
     || 'left';
   const widthPercent = block.options?.widthPercent ?? layoutContext?.defaultWidthPercent;
   const shouldApplyWidth = widthPercent !== undefined && !Number.isNaN(widthPercent) && block.type !== 'SPACER' && block.type !== 'IMAGE';
-  const shouldShrinkWrapContent = block.type === 'BOX' && !isGridMember && !shouldApplyWidth;
+  const isHeroStandaloneBox = block.type === 'BOX' && (boxGroupContext?.totalInGroup ?? 1) === 1;
+  const shouldShrinkWrapContent = block.type === 'BOX' && !isGridMember && !shouldApplyWidth && !isHeroStandaloneBox;
 
   const wrapperStyle: React.CSSProperties = {
     position: 'relative',

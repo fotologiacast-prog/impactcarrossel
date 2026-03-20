@@ -45,6 +45,7 @@ const LOGO_URL = "https://ik.imagekit.io/zslvvoal4/Logo%20Impact.webp?updatedAt=
 
 // Configurações do Supabase
 import { supabase } from './services/supabase';
+import emojiRegex from 'emoji-regex/RGI_Emoji';
 
 const GOOGLE_FONTS = [
   { id: 'Inter', label: 'Inter (Sans)' },
@@ -136,6 +137,13 @@ const normalizeRenderedText = (value: string) =>
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+
+const emojiPattern = emojiRegex();
+
+const containsEmoji = (value: string) => {
+  emojiPattern.lastIndex = 0;
+  return emojiPattern.test(value);
+};
 
 const supportsRenderedTextSync = (block: Block) =>
   block.type === 'TITLE'
@@ -1085,6 +1093,7 @@ const App: React.FC = () => {
             if (!supportsRenderedTextSync(block)) return;
             if (typeof block.content !== 'string') return;
             if (block.content.includes('[[') || block.content.includes('**')) return;
+            if (containsEmoji(block.content)) return;
 
             const renderedElement = wrapper.firstElementChild as HTMLElement | null;
             if (!renderedElement) return;
