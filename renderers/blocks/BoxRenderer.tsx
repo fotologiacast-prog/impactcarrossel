@@ -87,11 +87,11 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         ? '42px'
         : '34px';
   const computedMinHeight = isHeroBox ? '360px' : isDualBox ? '280px' : '220px';
-  const computedWidth = isGridMember ? '100%' : isHeroBox ? 'min(100%, 760px)' : '100%';
+  const computedWidth = isGridMember ? '100%' : isHeroBox ? 'min(100%, 940px)' : '100%';
   const resolvedFontSize = typeof computedFontSize === 'number' ? computedFontSize : parseInt(computedFontSize, 10);
   const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.62 : 1.28);
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
-    availableWidth: availableBox.width || (isHeroBox ? 620 : isDualBox ? 420 : 360),
+    availableWidth: availableBox.width || (isHeroBox ? 760 : isDualBox ? 420 : 360),
     availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * (isHeroBox ? 4 : 5),
     fontSize: resolvedFontSize,
     fontFamily: selectedFont,
@@ -185,7 +185,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         minHeight: computedMinHeight,
         height: isGridMember ? '100%' : undefined,
         width: computedWidth,
-        maxWidth: isHeroBox && groupLayout !== 'stack' ? '760px' : undefined,
+        maxWidth: isHeroBox && groupLayout !== 'stack' ? '940px' : undefined,
         boxShadow: isHeroBox ? '0 34px 100px rgba(0,0,0,0.18)' : isDualBox ? '0 24px 64px rgba(0,0,0,0.14)' : '0 16px 42px rgba(0,0,0,0.12)',
       }}
     >

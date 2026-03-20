@@ -13,6 +13,50 @@ const toEmojiCodepoint = (value: string) =>
 
 const createEmojiUrl = (value: string) => `${FLUENT_EMOJI_BASE_URL}/${toEmojiCodepoint(value)}.png`;
 
+const EmojiGlyph = ({
+  emoji,
+  size,
+  imgKey,
+}: {
+  emoji: string;
+  size: string;
+  imgKey: string;
+}) => {
+  const [failed, setFailed] = React.useState(false);
+
+  if (failed) {
+    return (
+      <span
+        key={`${imgKey}-fallback`}
+        className="inline-block select-none align-[-0.08em]"
+        style={{
+          fontSize: size,
+          lineHeight: 1,
+        }}
+      >
+        {emoji}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      key={imgKey}
+      src={createEmojiUrl(emoji)}
+      alt={emoji}
+      draggable={false}
+      crossOrigin="anonymous"
+      onError={() => setFailed(true)}
+      className="inline-block select-none align-[-0.16em]"
+      style={{
+        width: size,
+        height: size,
+        objectFit: 'contain',
+      }}
+    />
+  );
+};
+
 export const renderEmojiText = (
   value: string,
   keyPrefix: string,
@@ -33,18 +77,11 @@ export const renderEmojiText = (
 
     const emoji = match[0];
     nodes.push(
-      <img
+      <EmojiGlyph
         key={`${keyPrefix}-emoji-${matchIndex}`}
-        src={createEmojiUrl(emoji)}
-        alt={emoji}
-        draggable={false}
-        crossOrigin="anonymous"
-        className="inline-block select-none align-[-0.16em]"
-        style={{
-          width: size,
-          height: size,
-          objectFit: 'contain',
-        }}
+        imgKey={`${keyPrefix}-emoji-${matchIndex}`}
+        emoji={emoji}
+        size={size}
       />,
     );
 

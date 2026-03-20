@@ -428,7 +428,7 @@ export const SlideCanvas: React.FC<{
         ? 'justify-end'
         : 'justify-start';
     const groupMaxWidth = total === 1
-      ? '760px'
+      ? '940px'
       : total === 2
         ? '980px'
         : '1040px';
