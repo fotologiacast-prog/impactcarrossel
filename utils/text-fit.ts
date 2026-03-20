@@ -75,31 +75,51 @@ const hasTrailingOrphan = (lines: string[]) => {
   return lastLineWords.length === 1;
 };
 
-const rebalanceTrailingOrphan = (
+const rebalanceShortTrailingLines = (
   lines: string[],
   fontSize: number,
   constraint: TextConstraint,
   measurer: TextMeasurer,
 ) => {
-  if (!hasTrailingOrphan(lines)) return lines;
-
   const nextLines = [...lines];
-  const lastIndex = nextLines.length - 1;
-  const previousWords = nextLines[lastIndex - 1]?.split(/\s+/).filter(Boolean) || [];
-  if (previousWords.length < 2) return lines;
+  let changed = false;
 
-  const movedWord = previousWords.pop();
-  if (!movedWord) return lines;
+  const isShortLine = (lineIndex: number) => {
+    const words = nextLines[lineIndex]?.trim().split(/\s+/).filter(Boolean) || [];
+    if (words.length === 0) return false;
 
-  const nextPrevious = previousWords.join(' ');
-  const nextLast = `${movedWord} ${nextLines[lastIndex]}`.trim();
-  const nextWidth = measureLineWidth(nextLast, fontSize, constraint, measurer);
+    const width = measureLineWidth(nextLines[lineIndex], fontSize, constraint, measurer);
+    const isLastLine = lineIndex === nextLines.length - 1;
+    const widthThreshold = constraint.availableWidth * (isLastLine ? 0.34 : 0.22);
 
-  if (nextWidth > constraint.availableWidth) return lines;
+    return words.length === 1 || width < widthThreshold;
+  };
 
-  nextLines[lastIndex - 1] = nextPrevious;
-  nextLines[lastIndex] = nextLast;
-  return nextLines;
+  for (let lineIndex = nextLines.length - 1; lineIndex > 0; lineIndex -= 1) {
+    if (!isShortLine(lineIndex)) continue;
+
+    const previousWords = nextLines[lineIndex - 1]?.split(/\s+/).filter(Boolean) || [];
+    if (previousWords.length < 2) continue;
+
+    while (previousWords.length > 1 && isShortLine(lineIndex)) {
+      const movedWord = previousWords.pop();
+      if (!movedWord) break;
+
+      const nextCurrent = `${movedWord} ${nextLines[lineIndex]}`.trim();
+      const nextWidth = measureLineWidth(nextCurrent, fontSize, constraint, measurer);
+
+      if (nextWidth > constraint.availableWidth) {
+        previousWords.push(movedWord);
+        break;
+      }
+
+      nextLines[lineIndex - 1] = previousWords.join(' ');
+      nextLines[lineIndex] = nextCurrent;
+      changed = true;
+    }
+  }
+
+  return changed ? nextLines.filter(Boolean) : lines;
 };
 
 const getGreedyLinesForSegment = (
@@ -125,7 +145,7 @@ const getGreedyLinesForSegment = (
   }
 
   if (currentLine) lines.push(currentLine);
-  return rebalanceTrailingOrphan(lines, fontSize, constraint, measurer);
+  return rebalanceShortTrailingLines(lines, fontSize, constraint, measurer);
 };
 
 const getGreedyLines = (
@@ -160,14 +180,29 @@ const getBalancedLines = (
   const bestFromGreedy = getGreedyLines(text, fontSize, constraint, measurer);
   let best = bestFromGreedy;
   let bestScore = Number.POSITIVE_INFINITY;
+  const greedyLineCount = bestFromGreedy.length;
 
   const scoreCandidate = (candidateLines: string[]) => {
     const widths = candidateLines.map((line) => measureLineWidth(line, fontSize, constraint, measurer));
     const avg = widths.reduce((sum, width) => sum + width, 0) / widths.length;
     const balanceCost = widths.reduce((sum, width) => sum + Math.abs(width - avg), 0);
-    const orphanPenalty = candidateLines[candidateLines.length - 1].split(/\s+/).length === 1 ? 80 : 0;
-    const widowPenalty = candidateLines[0].split(/\s+/).length === 1 ? 30 : 0;
-    return balanceCost + orphanPenalty + widowPenalty;
+    const singleWordPenalty = candidateLines.reduce((sum, line, index) => {
+      const wordCount = line.split(/\s+/).filter(Boolean).length;
+      if (wordCount !== 1) return sum;
+      const isLastLine = index === candidateLines.length - 1;
+      return sum + (isLastLine ? 120 : 220);
+    }, 0);
+    const extraLinePenalty = Math.max(0, candidateLines.length - greedyLineCount) * 140;
+    const shortLinePenalty = widths.reduce((sum, width, index) => {
+      const isLastLine = index === widths.length - 1;
+      const threshold = constraint.availableWidth * (isLastLine ? 0.34 : 0.5);
+      return width < threshold ? sum + (isLastLine ? 40 : 120) : sum;
+    }, 0);
+    const underusePenalty = widths.reduce((sum, width) => {
+      const utilization = width / Math.max(1, constraint.availableWidth);
+      return utilization < 0.68 ? sum + (0.68 - utilization) * 160 : sum;
+    }, 0);
+    return balanceCost + singleWordPenalty + extraLinePenalty + shortLinePenalty + underusePenalty;
   };
 
   const visit = (startIndex: number, currentLines: string[]) => {
@@ -195,7 +230,7 @@ const getBalancedLines = (
   };
 
   visit(0, []);
-  return rebalanceTrailingOrphan(best, fontSize, constraint, measurer);
+  return rebalanceShortTrailingLines(best, fontSize, constraint, measurer);
 };
 
 const evaluateQuality = (

@@ -55,6 +55,16 @@ assert.equal(shrunkTitle.wasShrunk, true);
 assert.ok(shrunkTitle.effectiveFontSize < 80);
 assert.ok(shrunkTitle.lines.length <= 3);
 
+const wideTitleShouldUseWidth = fitTextToConstraint('Risco #4 Garantia que só existe no papel', {
+  ...titleConstraint,
+  availableWidth: 560,
+  availableHeight: 260,
+  maxLines: 4,
+  minFontSize: 44,
+}, measurer);
+assert.ok(wideTitleShouldUseWidth.lines.length <= 4);
+assert.ok(!wideTitleShouldUseWidth.lines.some((line, index, lines) => index < lines.length - 1 && line.trim().split(/\s+/).filter(Boolean).length === 1));
+
 const fittedBadge = fitTextToConstraint('Agende sua avaliação hoje', {
   availableWidth: 300,
   availableHeight: 92,
@@ -84,6 +94,20 @@ const fittedHighlightedParagraph = fitTextToConstraint('[[Na Fatsul: Mesmo com a
 }, measurer);
 assert.ok(fittedHighlightedParagraph.lines.length >= 2);
 assert.ok(fittedHighlightedParagraph.lines.every((line) => line.length > 0));
+
+const fittedNoShortPenultimateLine = fitTextToConstraint('[[Na Fatsul: Trabalhamos com o padrão ouro do mercado. Utilizamos microinversores, que são mais seguros, eficientes e possuem tecnologia de ponta para durar décadas.]]', {
+  availableWidth: 320,
+  availableHeight: 280,
+  fontSize: 28,
+  fontFamily: 'Inter',
+  fontWeight: 400,
+  lineHeight: 1.4,
+  maxLines: 6,
+  minFontSize: 22,
+  overflow: 'shrink',
+  role: 'paragraph',
+}, measurer);
+assert.ok(!fittedNoShortPenultimateLine.lines.some((line, index, lines) => index < lines.length - 1 && line.trim().split(/\s+/).filter(Boolean).length === 1));
 
 const fittedCard = fitTextToConstraint('Diagnóstico completo e higiene correta para iniciar o tratamento', {
   availableWidth: 340,
