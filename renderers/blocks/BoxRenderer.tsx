@@ -82,14 +82,14 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
   const computedFontSize = block.options?.fontSize
     ? block.options.fontSize
     : isHeroBox
-      ? '48px'
+      ? '54px'
       : isDualBox
-        ? '38px'
-        : '30px';
+        ? '42px'
+        : '34px';
   const computedMinHeight = isHeroBox ? '360px' : isDualBox ? '280px' : '220px';
   const computedWidth = isGridMember ? '100%' : isHeroBox ? 'min(100%, 760px)' : '100%';
   const resolvedFontSize = typeof computedFontSize === 'number' ? computedFontSize : parseInt(computedFontSize, 10);
-  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.5 : 1.2);
+  const resolvedLineHeight = block.options?.lineHeight ?? (hasBgHighlight ? 1.52 : 1.28);
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
     availableWidth: availableBox.width || (isHeroBox ? 620 : isDualBox ? 420 : 360),
     availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * (isHeroBox ? 4 : 5),
@@ -99,7 +99,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
     lineHeight: resolvedLineHeight,
     letterSpacing: block.options?.letterSpacing,
     maxLines: isHeroBox ? 4 : isDualBox ? 4 : 5,
-    minFontSize: Math.max(20, Math.round(resolvedFontSize * 0.72)),
+    minFontSize: Math.max(24, Math.round(resolvedFontSize * 0.84)),
     overflow: 'shrink',
     role: 'box',
   }), [
@@ -139,8 +139,9 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
   const textColor = block.options?.color || theme.colors.cardTextColor || (isOutlined ? theme.colors.textPrimary : '#000000');
 
   const renderIcon = () => {
-    const size = isHeroBox ? 132 : isGridMember ? 88 : (isPill ? 50 : 120);
-    const renderSize = block.options?.fontSize ? Math.max(28, block.options.fontSize * 1.15) : size;
+    const baseIconSize = isHeroBox ? 132 : isGridMember ? 88 : (isPill ? 50 : 120);
+    const scaledIconSize = Math.round(resolvedFontSize * (isHeroBox ? 1.55 : isDualBox ? 1.42 : 1.34));
+    const renderSize = Math.max(baseIconSize, scaledIconSize);
     
     if (customIcon) {
        if (customIcon.startsWith('<svg')) return (<div style={{ width: renderSize, height: renderSize }} className="flex items-center justify-center" dangerouslySetInnerHTML={{ __html: customIcon }} />);
