@@ -32,6 +32,43 @@ const normalizeText = (value: string) =>
 const stripMeasurementMarkers = (value: string) =>
   value.replace(/\[\[|\]\]|\*\*/g, '');
 
+const getHighlightPaddingCompensation = (constraint: TextConstraint) => {
+  switch (constraint.role) {
+    case 'title':
+      return 44;
+    case 'box':
+      return 40;
+    case 'badge':
+      return 28;
+    case 'card':
+      return 32;
+    case 'paragraph':
+      return 30;
+    default:
+      return 24;
+  }
+};
+
+const measureLineWidth = (
+  value: string,
+  fontSize: number,
+  constraint: TextConstraint,
+  measurer: TextMeasurer,
+) => {
+  const measuredWidth = measurer.measureWidth(stripMeasurementMarkers(value), {
+    fontSize,
+    fontFamily: constraint.fontFamily,
+    fontWeight: constraint.fontWeight,
+    letterSpacing: constraint.letterSpacing,
+  });
+
+  if (value.includes('[[') || value.includes(']]')) {
+    return measuredWidth + getHighlightPaddingCompensation(constraint);
+  }
+
+  return measuredWidth;
+};
+
 const hasTrailingOrphan = (lines: string[]) => {
   if (lines.length < 2) return false;
   const lastLineWords = lines[lines.length - 1]?.trim().split(/\s+/).filter(Boolean) || [];
@@ -56,12 +93,7 @@ const rebalanceTrailingOrphan = (
 
   const nextPrevious = previousWords.join(' ');
   const nextLast = `${movedWord} ${nextLines[lastIndex]}`.trim();
-  const nextWidth = measurer.measureWidth(stripMeasurementMarkers(nextLast), {
-    fontSize,
-    fontFamily: constraint.fontFamily,
-    fontWeight: constraint.fontWeight,
-    letterSpacing: constraint.letterSpacing,
-  });
+  const nextWidth = measureLineWidth(nextLast, fontSize, constraint, measurer);
 
   if (nextWidth > constraint.availableWidth) return lines;
 
@@ -70,29 +102,21 @@ const rebalanceTrailingOrphan = (
   return nextLines;
 };
 
-const getGreedyLines = (
-  text: string,
+const getGreedyLinesForSegment = (
+  segment: string,
   fontSize: number,
   constraint: TextConstraint,
   measurer: TextMeasurer,
 ): string[] => {
-  const words = text.trim().split(/\s+/).filter(Boolean);
+  const words = segment.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [''];
-
-  const typography = {
-    fontSize,
-    fontFamily: constraint.fontFamily,
-    fontWeight: constraint.fontWeight,
-    letterSpacing: constraint.letterSpacing,
-  };
 
   const lines: string[] = [];
   let currentLine = '';
 
   for (const word of words) {
     const candidate = currentLine ? `${currentLine} ${word}` : word;
-    const measuredCandidate = stripMeasurementMarkers(candidate);
-    if (measurer.measureWidth(measuredCandidate, typography) > constraint.availableWidth && currentLine) {
+    if (measureLineWidth(candidate, fontSize, constraint, measurer) > constraint.availableWidth && currentLine) {
       lines.push(currentLine);
       currentLine = word;
     } else {
@@ -104,27 +128,41 @@ const getGreedyLines = (
   return rebalanceTrailingOrphan(lines, fontSize, constraint, measurer);
 };
 
+const getGreedyLines = (
+  text: string,
+  fontSize: number,
+  constraint: TextConstraint,
+  measurer: TextMeasurer,
+): string[] =>
+  text
+    .split('\n')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .flatMap((segment) => getGreedyLinesForSegment(segment, fontSize, constraint, measurer));
+
 const getBalancedLines = (
   text: string,
   fontSize: number,
   constraint: TextConstraint,
   measurer: TextMeasurer,
 ): string[] => {
+  const segments = text
+    .split('\n')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  if (segments.length > 1) {
+    return segments.flatMap((segment) => getBalancedLines(segment, fontSize, constraint, measurer));
+  }
+
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length <= 2) return [text];
-  const typography = {
-    fontSize,
-    fontFamily: constraint.fontFamily,
-    fontWeight: constraint.fontWeight,
-    letterSpacing: constraint.letterSpacing,
-  };
 
   const bestFromGreedy = getGreedyLines(text, fontSize, constraint, measurer);
   let best = bestFromGreedy;
   let bestScore = Number.POSITIVE_INFINITY;
 
   const scoreCandidate = (candidateLines: string[]) => {
-    const widths = candidateLines.map((line) => measurer.measureWidth(stripMeasurementMarkers(line), typography));
+    const widths = candidateLines.map((line) => measureLineWidth(line, fontSize, constraint, measurer));
     const avg = widths.reduce((sum, width) => sum + width, 0) / widths.length;
     const balanceCost = widths.reduce((sum, width) => sum + Math.abs(width - avg), 0);
     const orphanPenalty = candidateLines[candidateLines.length - 1].split(/\s+/).length === 1 ? 80 : 0;
@@ -146,7 +184,7 @@ const getBalancedLines = (
 
     for (let endIndex = startIndex + 1; endIndex <= words.length; endIndex += 1) {
       const line = words.slice(startIndex, endIndex).join(' ');
-      const width = measurer.measureWidth(stripMeasurementMarkers(line), typography);
+      const width = measureLineWidth(line, fontSize, constraint, measurer);
       if (width > constraint.availableWidth && endIndex > startIndex + 1) break;
       if (width > constraint.availableWidth) continue;
 
@@ -173,7 +211,7 @@ const evaluateQuality = (
     fontFamily: constraint.fontFamily,
     fontWeight: constraint.fontWeight,
     letterSpacing: constraint.letterSpacing,
-  }));
+  }) + ((line.includes('[[') || line.includes(']]')) ? getHighlightPaddingCompensation(constraint) : 0));
 
   const avgWidth = measuredWidths.reduce((sum, width) => sum + width, 0) / measuredWidths.length;
   let score = 100;
@@ -199,12 +237,7 @@ const doesFit = (
   const height = measurer.measureHeight(lines, fontSize, constraint.lineHeight);
   const withinHeight = height <= constraint.availableHeight;
   const withinLines = lines.length <= constraint.maxLines;
-  const withinWidth = lines.every((line) => measurer.measureWidth(stripMeasurementMarkers(line), {
-    fontSize,
-    fontFamily: constraint.fontFamily,
-    fontWeight: constraint.fontWeight,
-    letterSpacing: constraint.letterSpacing,
-  }) <= constraint.availableWidth);
+  const withinWidth = lines.every((line) => measureLineWidth(line, fontSize, constraint, measurer) <= constraint.availableWidth);
 
   return withinHeight && withinLines && withinWidth;
 };

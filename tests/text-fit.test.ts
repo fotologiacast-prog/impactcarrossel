@@ -37,6 +37,13 @@ const fittedManual = fitTextToConstraint('Muita gente vai adiando', {
 assert.equal(fittedManual.formatted, 'Muita gente\nvai adiando');
 assert.equal(fittedManual.wasShrunk, false);
 
+const fittedHardBreak = fitTextToConstraint('Muita gente\nvai adiando', {
+  ...titleConstraint,
+  availableWidth: 420,
+}, measurer);
+assert.equal(fittedHardBreak.formatted, 'Muita gente\nvai adiando');
+assert.equal(fittedHardBreak.lines.length, 2);
+
 const shrunkTitle = fitTextToConstraint('Como criar conteúdo que realmente converte em vendas', {
   ...titleConstraint,
   availableWidth: 360,
@@ -62,6 +69,21 @@ const fittedBadge = fitTextToConstraint('Agende sua avaliação hoje', {
 }, measurer);
 assert.ok(fittedBadge.lines.length <= 2);
 assert.ok(fittedBadge.quality > 60);
+
+const fittedHighlightedParagraph = fitTextToConstraint('[[Na Fatsul: Mesmo com as mudanças, a economia pode chegar a 95% da conta.]]', {
+  availableWidth: 280,
+  availableHeight: 220,
+  fontSize: 32,
+  fontFamily: 'Inter',
+  fontWeight: 400,
+  lineHeight: 1.35,
+  maxLines: 6,
+  minFontSize: 24,
+  overflow: 'shrink',
+  role: 'paragraph',
+}, measurer);
+assert.ok(fittedHighlightedParagraph.lines.length >= 2);
+assert.ok(fittedHighlightedParagraph.lines.every((line) => line.length > 0));
 
 const fittedCard = fitTextToConstraint('Diagnóstico completo e higiene correta para iniciar o tratamento', {
   availableWidth: 340,
