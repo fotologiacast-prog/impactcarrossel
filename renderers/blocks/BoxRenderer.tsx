@@ -198,7 +198,7 @@ export function BoxRenderer({ block, theme, isGridMember, indexInGrid = 0, total
         </div>
         <div 
           ref={textRef}
-          className={`${hasBgHighlight ? '!leading-[1.68]' : '!leading-[1.2]'} tracking-tight font-black ${align === 'center' ? 'mt-4' : ''}`}
+          className={`${hasBgHighlight ? '!leading-[1.68]' : '!leading-[1.2]'} tracking-tight font-black min-w-0 w-full ${align === 'center' ? 'mt-4' : 'flex-1'}`}
           style={{
             fontSize: `${fitted.effectiveFontSize}px`,
             fontWeight: block.options?.fontWeight || 900,

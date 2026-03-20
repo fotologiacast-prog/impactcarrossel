@@ -1094,6 +1094,7 @@ const App: React.FC = () => {
             if (typeof block.content !== 'string') return;
             if (block.content.includes('[[') || block.content.includes('**')) return;
             if (containsEmoji(block.content)) return;
+            if (block.content.includes('\n') || / {2,}/.test(block.content)) return;
 
             const renderedElement = wrapper.firstElementChild as HTMLElement | null;
             if (!renderedElement) return;
