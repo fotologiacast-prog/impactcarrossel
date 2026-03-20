@@ -15,7 +15,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
     ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif') 
     : theme.typography.fontFamily;
   const resolvedFontSize = block.options?.fontSize || 32;
-  const resolvedLineHeight = block.options?.lineHeight ?? 1.3;
+  const resolvedLineHeight = block.options?.lineHeight ?? 1.38;
   const fitted = React.useMemo(() => fitTextToConstraint(rawContent, {
     availableWidth: availableWidth || 840,
     availableHeight: resolvedFontSize * resolvedLineHeight * 6,
@@ -76,7 +76,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
       const newParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part === 'string') {
-          const split = part.split(/\[\[(.*?)\]\]/g);
+          const split = part.split(/\[\[([\s\S]*?)\]\]/g);
           split.forEach((s, i) => {
             if (i % 2 === 1) {
               newParts.push(
@@ -128,7 +128,7 @@ export function ParagraphRenderer({ block, theme }: { block: Block; theme: Theme
   return (
     <p
       ref={elementRef}
-      className={`w-full ${theme.typography.paragraph} ${hasBgHighlight ? '!leading-[1.6]' : '!leading-[1.3]'}`}
+      className={`w-full ${theme.typography.paragraph} ${hasBgHighlight ? '!leading-[1.62]' : '!leading-[1.38]'}`}
       style={{ ...style, whiteSpace: 'pre-line', textWrap: undefined }}
       data-block-type="PARAGRAPH"
     >

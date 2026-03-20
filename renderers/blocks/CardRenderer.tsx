@@ -96,7 +96,7 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
       const newParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part === 'string') {
-          const split = part.split(/\[\[(.*?)\]\]/g);
+          const split = part.split(/\[\[([\s\S]*?)\]\]/g);
           split.forEach((s, i) => {
             if (i % 2 === 1) {
               newParts.push(<span key={`bg-hl-${i}`} className="inline px-3 py-1 rounded-lg mx-1 font-black" style={{ backgroundColor: theme.colors.hlBgColor || (isAccent ? '#fff' : theme.colors.accent), color: theme.colors.hlTextColor || '#000', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' as any, fontFamily: theme.typography.fontFamily }}>{renderEmojiText(s, `bg-hl-${i}`)}</span>);

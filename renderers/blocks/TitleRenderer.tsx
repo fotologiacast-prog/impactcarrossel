@@ -22,9 +22,9 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const [availableWidth, setAvailableWidth] = React.useState(0);
 
   const sizeClasses = {
-    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.2]' : 'leading-[1.1]'}`,
-    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.15]' : 'leading-[0.95]'}`,
-    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.0]' : 'leading-[0.85]'}`
+    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.22]' : 'leading-[1.14]'}`,
+    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.16]' : 'leading-[1.04]'}`,
+    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.02]' : 'leading-[0.9]'}`
   };
 
   const selectedFont = fontVariant === 'destaque' 
@@ -33,7 +33,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const usingDedicatedSecondaryFont = fontVariant === 'destaque' && selectedFont !== theme.typography.fontFamily;
   const defaultFontWeight = (usingDedicatedSecondaryFont || isSerifLegacy || selectedFont.includes('Serif') || selectedFont.includes('Playfair')) ? 400 : 900;
   const resolvedFontSize = block.options?.fontSize || (size === 'sm' ? 64 : size === 'lg' ? 180 : 80);
-  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? 1.1 : size === 'lg' ? 0.85 : 0.95);
+  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? 1.14 : size === 'lg' ? 0.9 : 1.04);
   const titleMaxLines = size === 'lg' ? 3 : 4;
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
     availableWidth: availableWidth || 840,
@@ -96,7 +96,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
       const newParts: (string | React.ReactNode)[] = [];
       parts.forEach(part => {
         if (typeof part === 'string') {
-          const split = part.split(/\[\[(.*?)\]\]/g);
+          const split = part.split(/\[\[([\s\S]*?)\]\]/g);
           split.forEach((s, i) => {
             if (i % 2 === 1) {
               newParts.push(
