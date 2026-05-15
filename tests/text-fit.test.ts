@@ -123,4 +123,37 @@ const fittedCard = fitTextToConstraint('Diagnóstico completo e higiene correta 
 }, measurer);
 assert.ok(fittedCard.lines.length <= 3);
 
+const fittedNoSingleWordTitleLine = fitTextToConstraint('O resultado mais natural depende da técnica', {
+  ...titleConstraint,
+  availableWidth: 340,
+  availableHeight: 220,
+  maxLines: 4,
+  minFontSize: 32,
+}, measurer);
+assert.ok(
+  !fittedNoSingleWordTitleLine.lines.some((line) => line.trim().split(/\s+/).filter(Boolean).length === 1),
+);
+
+const pollutedAutoTitle = fitTextToConstraint('O resultado mais natural\ndepende da técnica', {
+  ...titleConstraint,
+  availableWidth: 340,
+  availableHeight: 220,
+  maxLines: 4,
+  minFontSize: 32,
+}, measurer);
+assert.equal(pollutedAutoTitle.formatted, fittedNoSingleWordTitleLine.formatted);
+assert.equal(pollutedAutoTitle.effectiveFontSize, fittedNoSingleWordTitleLine.effectiveFontSize);
+
+const fittedTitleNearEdge = fitTextToConstraint('O paladar é treinado.', {
+  ...titleConstraint,
+  availableWidth: 320,
+  availableHeight: 190,
+  fontSize: 80,
+  letterSpacing: -0.8,
+  maxLines: 3,
+  minFontSize: 56,
+}, measurer);
+assert.notEqual(fittedTitleNearEdge.lines[0], 'O');
+assert.ok(fittedTitleNearEdge.lines.length <= 2);
+
 console.log('text-fit.test.ts passed');

@@ -10,6 +10,7 @@ export function UserRenderer({ block, theme }: { block: Block; theme: Theme }) {
   const avatar = block.options?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200';
   const hideName = block.options?.hideName;
   const isLarge = block.options?.size === 'lg';
+  const isSocialVariant = block.options?.variant === 'twitter-post';
   const nameColor = block.options?.nameColor || block.options?.color || theme.colors.textPrimary;
   const nameWeight = block.options?.fontWeight || 900;
   const handleWeight = Math.max(100, Math.min(900, nameWeight - 200));
@@ -19,8 +20,64 @@ export function UserRenderer({ block, theme }: { block: Block; theme: Theme }) {
   const handleFontSize = baseFontSize * 0.75;
 
   // Ensure font family is quoted
-  const selectedFont = theme.typography.fontFamily;
+  const selectedFont = block.options?.fontFamily
+    || (block.options?.fontVariant === 'destaque'
+      ? (theme.typography.fontFamilySecondary || theme.typography.fontFamily)
+      : theme.typography.fontFamily);
   const safeFontFamily = quoteFontFamily(selectedFont, theme.typography.fontFamily);
+
+  if (isSocialVariant) {
+    const socialNameSize = block.options?.fontSize || 30;
+    const socialHandleSize = Math.round(socialNameSize * 0.72);
+    const avatarSizeClass = 'w-24 h-24';
+    const gapClass = 'gap-5 mb-10';
+    const socialAvatarBorderColor = 'rgba(20,20,20,0.08)';
+
+    return (
+      <div
+        className={`flex w-full items-center justify-start ${gapClass}`}
+        data-block-type="USER"
+        data-user-variant="twitter-post"
+      >
+        <div
+          className={`${avatarSizeClass} rounded-full overflow-hidden border shrink-0 shadow-xl`}
+          style={{ borderColor: socialAvatarBorderColor }}
+        >
+          <img src={avatar} alt={name} className="w-full h-full object-cover" />
+        </div>
+        <div className="flex flex-col justify-center items-start min-w-0 gap-1 text-left" data-block-type="USER">
+          {!hideName && (
+            <span
+              style={{
+                fontSize: `${socialNameSize}px`,
+                fontFamily: safeFontFamily,
+                color: nameColor,
+                fontWeight: nameWeight,
+                lineHeight: 1,
+              }}
+              className="block w-full font-black tracking-tight text-left"
+              data-block-type="USER"
+            >
+              {renderEmojiText(name, 'user-social-name')}
+            </span>
+          )}
+          <span
+            style={{
+              fontSize: `${socialHandleSize}px`,
+              color: block.options?.handleColor || theme.colors.accent,
+              fontFamily: safeFontFamily,
+              fontWeight: Math.max(700, handleWeight),
+              lineHeight: 1.05,
+            }}
+            className="block w-full font-black tracking-tight text-left"
+            data-block-type="USER"
+          >
+            {renderEmojiText(handle, 'user-social-handle')}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

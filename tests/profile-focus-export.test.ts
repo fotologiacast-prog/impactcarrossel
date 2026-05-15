@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { getProfileFocusVisualStyles } from '../utils/profile-focus.ts';
 
 const visualStyles = getProfileFocusVisualStyles({
-  white: '#F5F3EE',
+  white: '#efefef',
   strength: 0.32,
   blur: 18,
 });
 
-assert.equal(visualStyles.shell.background, 'rgba(245, 243, 238, 0.1384)');
+assert.equal(visualStyles.shell.background, 'rgba(239, 239, 239, 0.1384)');
 assert.equal(visualStyles.shell.border, '1px solid rgba(255,255,255,0.24)');
 assert.equal(visualStyles.shell.boxShadow, undefined);
 assert.equal(visualStyles.shadow.opacity, 0.34);

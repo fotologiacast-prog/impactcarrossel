@@ -1,6 +1,6 @@
 const hexToRgba = (value: string | undefined, alpha: number) => {
   if (!value || !value.startsWith('#')) {
-    return `rgba(245, 243, 238, ${alpha})`;
+    return `rgba(239, 239, 239, ${alpha})`;
   }
 
   const raw = value.replace('#', '');

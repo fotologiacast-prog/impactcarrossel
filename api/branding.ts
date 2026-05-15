@@ -81,6 +81,27 @@ const getLuminance = (hex: string) => {
 const getContrastTextColor = (background: string, white = DEFAULT_WHITE, black = DEFAULT_BLACK) =>
   getLuminance(background) > 0.42 ? black : white;
 
+const getEditorialAccentColor = (colors: Array<string | null | undefined>) => {
+  const palette = getUniqueColors(colors);
+
+  const chromaticColor = palette.find((color) => {
+    const rgb = hexToRgb(color);
+    if (!rgb) return false;
+    const luminance = getLuminance(color);
+    const spread = Math.max(rgb.r, rgb.g, rgb.b) - Math.min(rgb.r, rgb.g, rgb.b);
+    return luminance > 0.08 && luminance < 0.92 && spread > 24;
+  });
+
+  if (chromaticColor) return chromaticColor;
+
+  const nonNeutralColor = palette.find((color) => {
+    const luminance = getLuminance(color);
+    return luminance > 0.08 && luminance < 0.92;
+  });
+
+  return nonNeutralColor || palette[2] || palette[1] || palette[0] || DEFAULT_ACCENT;
+};
+
 const normalizeFontFamilyName = (value?: string | null) =>
   (value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -122,11 +143,11 @@ const createBrandThemeFromPreset = (preset: {
   font_destaque?: string;
 }) => {
   const palette = getUniqueColors(preset.colors || []);
-  const background = palette[0] || DEFAULT_BACKGROUND;
-  const accent = palette[2] || palette[1] || palette[0] || DEFAULT_ACCENT;
+  const background = DEFAULT_WHITE;
+  const accent = getEditorialAccentColor(palette);
   const white = DEFAULT_WHITE;
   const black = DEFAULT_BLACK;
-  const text = getContrastTextColor(background, white, black);
+  const text = DEFAULT_BLACK;
 
   return {
     background,
@@ -278,6 +299,8 @@ export default async function handler(_req: any, res: any) {
         font_destaque: fontDestaque,
         profile_picture: client.profile_picture,
         instagram: client.instagram,
+        crm: client.crm,
+        rqe: client.rqe,
         defaults: {
           bg: theme.background,
           accent: theme.accent,

@@ -1,6 +1,7 @@
 import type { Block, BrandTheme, CustomFont, ProjectClientProfile, ProjectFX, SlideDefinition } from '../types';
+import { buildCoverProfileBadge } from './covers/cover-profile';
 
-const DEFAULT_WHITE = '#F5F3EE';
+const DEFAULT_WHITE = '#efefef';
 const DEFAULT_BLACK = '#141414';
 const DEFAULT_BACKGROUND = '#0D0D0D';
 const DEFAULT_ACCENT = '#1fb2f7';
@@ -213,6 +214,31 @@ const getUniqueColors = (colors: Array<string | undefined | null>): string[] => 
   return result;
 };
 
+const getEditorialAccentColor = (
+  colors: Array<string | undefined | null>,
+  fallback = DEFAULT_ACCENT,
+): string => {
+  const palette = getUniqueColors(colors);
+
+  const chromaticColor = palette.find((color) => {
+    const rgb = getRgbFromColor(color);
+    if (!rgb) return false;
+    const [r, g, b] = rgb;
+    const luminance = getRelativeLuminance(color);
+    const spread = Math.max(r, g, b) - Math.min(r, g, b);
+    return luminance > 0.08 && luminance < 0.92 && spread > 24;
+  });
+
+  if (chromaticColor) return chromaticColor;
+
+  const nonNeutralColor = palette.find((color) => {
+    const luminance = getRelativeLuminance(color);
+    return luminance > 0.08 && luminance < 0.92;
+  });
+
+  return nonNeutralColor || palette[2] || palette[1] || palette[0] || fallback;
+};
+
 export const createBrandThemeFromPreset = (
   preset: BrandPresetLike,
   fonts: Array<Pick<CustomFont, 'family' | 'name'>> = [],
@@ -221,11 +247,11 @@ export const createBrandThemeFromPreset = (
   const white = DEFAULT_WHITE;
   const black = DEFAULT_BLACK;
 
-  const background = preset.defaults?.bg || colors[0] || DEFAULT_BACKGROUND;
-  const accent = preset.defaults?.accent || colors[2] || colors[1] || DEFAULT_ACCENT;
-  const text = preset.defaults?.text || getContrastTextColor(background, white, black);
-  const hlBgColor = preset.defaults?.hlBgColor || colors[3] || accent;
-  const cardBg = preset.defaults?.cardBg || colors[4] || accent;
+  const accent = preset.defaults?.accent || getEditorialAccentColor(colors);
+  const background = preset.defaults?.bg || white;
+  const text = preset.defaults?.text || black;
+  const hlBgColor = preset.defaults?.hlBgColor || accent;
+  const cardBg = preset.defaults?.cardBg || accent;
 
   return {
     paletteId: preset.id,
@@ -448,7 +474,7 @@ export const applyProjectClientToSlide = (
 
   const shouldUseProfilePictureInImage =
     isNonEmptyString(client.profilePicture) &&
-    (slide.template === 'PROFILE_FOCUS' || slide.template === 'SOCIAL_CHECKLIST') &&
+    slide.contentTemplate === 'CHECKLIST' &&
     !!slide.image;
 
   const nextImage =
@@ -461,11 +487,38 @@ export const applyProjectClientToSlide = (
 
   if (nextImage !== slide.image) changed = true;
 
+  const nextCoverBadge = buildCoverProfileBadge({
+    name: client.name,
+    instagram: client.instagram,
+    profilePicture: client.profilePicture,
+    crm: client.crm,
+    rqe: client.rqe,
+  });
+
+  const nextCover =
+    slide.cover && (
+      slide.cover.profile.avatar !== nextCoverBadge.avatar ||
+      slide.cover.profile.handle !== nextCoverBadge.handle ||
+      slide.cover.profile.displayName !== nextCoverBadge.displayName ||
+      slide.cover.profile.meta !== nextCoverBadge.meta
+    )
+      ? {
+          ...slide.cover,
+          profile: {
+            ...slide.cover.profile,
+            ...nextCoverBadge,
+          },
+        }
+      : slide.cover;
+
+  if (nextCover !== slide.cover) changed = true;
+
   if (!changed) return slide;
 
   return {
     ...slide,
     blocks: nextBlocks,
     image: nextImage,
+    cover: nextCover,
   };
 };

@@ -3,8 +3,11 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { fetchBrandingResponse, fetchClientResponse } from './utils/branding-api.ts';
+import { hydrateServerEnv } from './utils/server-env.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+hydrateServerEnv(process.env.NODE_ENV || 'development', __dirname);
 
 async function startServer() {
   const app = express();

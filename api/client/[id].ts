@@ -45,7 +45,7 @@ export default async function handler(req: any, res: any) {
     const supabase = getSupabaseServer();
     const { data: client, error } = await supabase
       .from('clients')
-      .select('id, name, profile_picture, instagram')
+      .select('id, name, profile_picture, instagram, crm, rqe')
       .eq('id', String(req.query.id || ''))
       .single();
 
@@ -56,6 +56,8 @@ export default async function handler(req: any, res: any) {
       name: client.name,
       profile_picture: client.profile_picture,
       instagram: client.instagram,
+      crm: client.crm,
+      rqe: client.rqe,
     });
   } catch (error: any) {
     console.error('Client API Error:', error);

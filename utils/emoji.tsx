@@ -4,6 +4,21 @@ import emojiRegex from 'emoji-regex/RGI_Emoji';
 const FLUENT_EMOJI_BASE_URL = 'https://uwx.github.io/fluentui-twemoji-3d/export/3D_png/72x72';
 const regex = emojiRegex();
 
+const EMOJI_SIZE_BY_CONTEXT = {
+  title: '1.12em',
+  paragraph: '1.14em',
+  list: '1.42em',
+  badge: '1.36em',
+  box: '1.18em',
+  card: '1.18em',
+  default: '1.12em',
+} as const;
+
+export type EmojiRenderContext = keyof typeof EMOJI_SIZE_BY_CONTEXT;
+
+export const getEmojiSizeForContext = (context: EmojiRenderContext): string =>
+  EMOJI_SIZE_BY_CONTEXT[context] || EMOJI_SIZE_BY_CONTEXT.default;
+
 const toEmojiCodepoint = (value: string) =>
   Array.from(value)
     .map((char) => char.codePointAt(0)?.toString(16))
@@ -60,7 +75,7 @@ const EmojiGlyph = ({
 export const renderEmojiText = (
   value: string,
   keyPrefix: string,
-  size: string = '1.1em',
+  size: string = EMOJI_SIZE_BY_CONTEXT.default,
 ): React.ReactNode[] => {
   if (!value) return [value];
 
@@ -99,7 +114,7 @@ export const renderEmojiText = (
 export const renderEmojiNodes = (
   nodes: Array<string | React.ReactNode>,
   keyPrefix: string,
-  size: string = '1.1em',
+  size: string = EMOJI_SIZE_BY_CONTEXT.default,
 ): React.ReactNode[] =>
   nodes.flatMap((node, index) => {
     if (typeof node !== 'string') return [node];

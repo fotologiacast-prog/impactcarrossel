@@ -85,3 +85,12 @@ export class TextMeasurer {
 }
 
 export const textMeasurer = new TextMeasurer();
+
+// Invalidate measurement cache when custom fonts finish loading.
+// Without this, measurements taken before fonts load use the browser’s fallback
+// font metrics, causing wrong line-break positions.
+if (typeof document !== 'undefined') {
+  document.fonts.ready.then(() => {
+    textMeasurer.clearCache();
+  });
+}

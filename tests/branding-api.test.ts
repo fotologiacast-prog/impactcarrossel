@@ -8,6 +8,8 @@ const brandingPayload = buildBrandingResponse({
       name: 'Impact Doctor',
       profile_picture: 'data:image/png;base64,abc',
       instagram: 'impactdoctor',
+      crm: '12345',
+      rqe: '6789',
       preferences: {
         font_padrao: 'Merriweather',
       },
@@ -20,6 +22,8 @@ const brandingPayload = buildBrandingResponse({
       name: 'Clinica Camel',
       profile_picture: null,
       instagram: 'clinicacamel',
+      crm: null,
+      rqe: null,
       preferences: {
         fontPadrao: 'Merriweather',
       },
@@ -32,6 +36,8 @@ const brandingPayload = buildBrandingResponse({
       name: 'Clinica Fallback',
       profile_picture: null,
       instagram: null,
+      crm: null,
+      rqe: null,
       preferences: null,
       image_settings: null,
     },
@@ -98,7 +104,13 @@ assert.equal(brandingPayload.clients[0].font_padrao, 'Merriweather Regular');
 assert.equal(brandingPayload.clients[0].font_destaque, 'Oswald');
 assert.equal(brandingPayload.clients[0].profile_picture, 'data:image/png;base64,abc');
 assert.equal(brandingPayload.clients[0].instagram, 'impactdoctor');
-assert.equal(brandingPayload.clients[0].defaults.text, '#F5F3EE');
+assert.equal(brandingPayload.clients[0].crm, '12345');
+assert.equal(brandingPayload.clients[0].rqe, '6789');
+assert.equal(brandingPayload.clients[0].defaults.bg, '#efefef');
+assert.equal(brandingPayload.clients[0].defaults.text, '#141414');
+assert.equal(brandingPayload.clients[0].defaults.accent, '#0EA5E9');
+assert.equal(brandingPayload.clients[0].defaults.cardBg, '#0EA5E9');
+assert.equal(brandingPayload.clients[0].defaults.hlBgColor, '#0EA5E9');
 assert.deepEqual(
   brandingPayload.clients[0].colors.slice(0, 5),
   ['#111111', '#f4f4f4', '#0ea5e9', '#ff8800', '#22c55e'],
@@ -113,6 +125,8 @@ const clientResponse = buildClientResponse({
   name: 'Clinica A',
   profile_picture: 'https://cdn.example.com/profile.jpg',
   instagram: null,
+  crm: '9988',
+  rqe: '7766',
 });
 
 assert.deepEqual(clientResponse, {
@@ -120,6 +134,8 @@ assert.deepEqual(clientResponse, {
   name: 'Clinica A',
   profile_picture: 'https://cdn.example.com/profile.jpg',
   instagram: null,
+  crm: '9988',
+  rqe: '7766',
 });
 
 console.log('branding-api.test.ts passed');

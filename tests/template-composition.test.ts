@@ -11,6 +11,7 @@ import {
   getImageLayoutFamily,
   getImageLayoutIdForFamilyDirection,
 } from '../domain/templates/ImageLayoutRegistry.ts';
+import { imageConfigSchema } from '../template-dsl/schema.ts';
 
 const visibleContentTemplateIds = contentTemplateRegistry.getAll().map((template) => template.id);
 
@@ -60,11 +61,22 @@ assert.equal(boxFamily?.defaultLayoutId, 'IMAGE_BOX_RIGHT');
 assert.ok(boxFamily?.layoutIds.includes('IMAGE_BOX_RIGHT'));
 assert.equal(getImageLayoutDirection('IMAGE_STAGE_RIGHT'), 'right');
 assert.equal(getImageLayoutIdForFamilyDirection('box', 'bottom'), 'IMAGE_BOX_BOTTOM');
+assert.equal(getImageLayoutDirection('IMAGE_STAGE_LEFT'), 'left');
+assert.equal(getImageLayoutDirection('IMAGE_STAGE_TOP'), 'top');
+assert.equal(getImageLayoutDirection('IMAGE_STAGE_BOTTOM'), 'bottom');
+assert.equal(getImageLayoutIdForFamilyDirection('stage', 'left'), 'IMAGE_STAGE_LEFT');
+assert.equal(getImageLayoutIdForFamilyDirection('stage', 'top'), 'IMAGE_STAGE_TOP');
+assert.equal(getImageLayoutIdForFamilyDirection('stage', 'bottom'), 'IMAGE_STAGE_BOTTOM');
 
 const stageLayoutFamily = getImageLayoutFamily('IMAGE_STAGE_RIGHT');
 assert.equal(stageLayoutFamily?.id, 'stage');
 assert.equal(stageLayoutFamily?.defaultLayoutId, 'IMAGE_STAGE_RIGHT');
-assert.deepEqual(stageLayoutFamily?.layoutIds, ['IMAGE_STAGE_RIGHT']);
+assert.deepEqual(stageLayoutFamily?.layoutIds, [
+  'IMAGE_STAGE_LEFT',
+  'IMAGE_STAGE_RIGHT',
+  'IMAGE_STAGE_TOP',
+  'IMAGE_STAGE_BOTTOM',
+]);
 
 const glassComposition = resolveSlideComposition({
   template: 'HERO',
@@ -74,6 +86,84 @@ const glassComposition = resolveSlideComposition({
 
 assert.equal(glassComposition.contentTemplateId, 'HERO');
 assert.equal(glassComposition.imageLayoutId, 'IMAGE_GLASS_CARD');
+assert.equal(getImageLayoutDirection('IMAGE_GLASS_BOTTOM'), 'bottom');
+assert.equal(getImageLayoutIdForFamilyDirection('glass', 'bottom'), 'IMAGE_GLASS_BOTTOM');
+
+const waveFamily = getImageLayoutFamily('IMAGE_WAVE_BOTTOM');
+assert.equal(waveFamily?.id, 'wave');
+assert.equal(waveFamily?.defaultLayoutId, 'IMAGE_WAVE_BOTTOM');
+assert.deepEqual(waveFamily?.layoutIds, ['IMAGE_WAVE_BOTTOM']);
+assert.equal(getImageLayoutDirection('IMAGE_WAVE_BOTTOM'), 'bottom');
+assert.equal(getDefaultImageLayoutIdForFamily('wave'), 'IMAGE_WAVE_BOTTOM');
+assert.equal(getImageLayoutIdForFamilyDirection('wave', 'bottom'), 'IMAGE_WAVE_BOTTOM');
+
+const glassBottomComposition = resolveSlideComposition({
+  template: 'HERO',
+  imageLayout: 'IMAGE_GLASS_BOTTOM',
+  blocks: [],
+});
+
+assert.equal(glassBottomComposition.contentTemplateId, 'HERO');
+assert.equal(glassBottomComposition.imageLayoutId, 'IMAGE_GLASS_BOTTOM');
+
+const glassBottomImage = createImageConfigFromLayout('IMAGE_GLASS_BOTTOM', { url: 'https://example.com/image.png' });
+assert.equal(glassBottomImage?.type, 'IMAGE_GLASS_CARD');
+assert.equal(glassBottomImage?.position, 'bottom');
+
+const waveComposition = resolveSlideComposition({
+  template: 'HERO',
+  imageLayout: 'IMAGE_WAVE_BOTTOM',
+  blocks: [],
+});
+
+assert.equal(waveComposition.contentTemplateId, 'HERO');
+assert.equal(waveComposition.imageLayoutId, 'IMAGE_WAVE_BOTTOM');
+
+const waveImage = createImageConfigFromLayout('IMAGE_WAVE_BOTTOM', { url: 'https://example.com/wave.png' });
+assert.equal(waveImage?.type, 'IMAGE_WAVE');
+assert.equal(waveImage?.position, 'bottom');
+assert.equal(waveImage?.url, 'https://example.com/wave.png');
+assert.equal(imageConfigSchema.safeParse(waveImage).success, true);
+
+const explicitWaveComposition = resolveSlideComposition({
+  template: 'HERO',
+  image: {
+    type: 'IMAGE_WAVE',
+    position: 'bottom',
+  },
+  blocks: [],
+});
+
+assert.equal(explicitWaveComposition.imageLayoutId, 'IMAGE_WAVE_BOTTOM');
+
+const waveOverrides = createOptionOverridesFromImageLayout('IMAGE_WAVE_BOTTOM');
+assert.equal(waveOverrides.contentHorizontalAlign, 'center');
+assert.equal(waveOverrides.contentVerticalAlign, 'top');
+assert.equal(waveOverrides.contentWidthPercent, 92);
+
+const noImageOverrides = createOptionOverridesFromImageLayout('IMAGE_NONE');
+assert.equal(noImageOverrides.contentHorizontalAlign, 'center');
+assert.equal(noImageOverrides.contentVerticalAlign, 'center');
+
+const backgroundOverrides = createOptionOverridesFromImageLayout('IMAGE_BACKGROUND');
+assert.equal(backgroundOverrides.contentHorizontalAlign, 'center');
+assert.equal(backgroundOverrides.contentVerticalAlign, 'center');
+
+const splitLeftOverrides = createOptionOverridesFromImageLayout('IMAGE_SPLIT_LEFT');
+assert.equal(splitLeftOverrides.contentHorizontalAlign, 'right');
+assert.equal(splitLeftOverrides.contentVerticalAlign, 'center');
+
+const splitRightOverrides = createOptionOverridesFromImageLayout('IMAGE_SPLIT_RIGHT');
+assert.equal(splitRightOverrides.contentHorizontalAlign, 'left');
+assert.equal(splitRightOverrides.contentVerticalAlign, 'center');
+
+const stageLeftOverrides = createOptionOverridesFromImageLayout('IMAGE_STAGE_LEFT');
+assert.equal(stageLeftOverrides.contentHorizontalAlign, 'right');
+assert.equal(stageLeftOverrides.contentVerticalAlign, 'center');
+
+const glassBottomOverrides = createOptionOverridesFromImageLayout('IMAGE_GLASS_BOTTOM');
+assert.equal(glassBottomOverrides.contentHorizontalAlign, 'center');
+assert.equal(glassBottomOverrides.contentVerticalAlign, 'center');
 
 const profileComposition = resolveSlideComposition({
   template: 'HERO',
@@ -126,6 +216,23 @@ const backgroundOptionComposition = resolveSlideComposition({
 assert.equal(backgroundOptionComposition.contentTemplateId, 'CHECKLIST');
 assert.equal(backgroundOptionComposition.imageLayoutId, 'IMAGE_BACKGROUND');
 
+const explicitNoImageComposition = resolveSlideComposition({
+  template: 'HERO',
+  contentTemplate: 'HERO',
+  imageLayout: 'IMAGE_NONE',
+  image: {
+    type: 'NONE',
+    url: 'https://example.com/image.png',
+  },
+  options: {
+    backgroundImage: 'https://example.com/background.jpg',
+  },
+  blocks: [],
+});
+
+assert.equal(explicitNoImageComposition.contentTemplateId, 'HERO');
+assert.equal(explicitNoImageComposition.imageLayoutId, 'IMAGE_NONE');
+
 const fadeBackgroundOptionComposition = resolveSlideComposition({
   template: 'HERO',
   imageLayout: 'IMAGE_FADE_LEFT',
@@ -144,11 +251,19 @@ assert.equal(fadeImage?.type, 'IMAGE_BACKGROUND');
 assert.equal(fadeImage?.position, 'right');
 assert.equal(fadeImage?.url, 'https://example.com/image.png');
 
+const boxBottomImage = createImageConfigFromLayout('IMAGE_BOX_BOTTOM', { url: 'https://example.com/image.png' });
+assert.equal(boxBottomImage?.type, 'IMAGE_BOX');
+assert.equal(boxBottomImage?.position, 'bottom');
+assert.equal(boxBottomImage?.width, 760);
+assert.equal(boxBottomImage?.height, 320);
+
 const noImage = createImageConfigFromLayout('IMAGE_NONE', { url: 'https://example.com/image.png' });
 assert.deepEqual(noImage, { type: 'NONE' });
 
 const fadeOverrides = createOptionOverridesFromImageLayout('IMAGE_FADE_RIGHT');
 assert.equal(fadeOverrides.fadeSide, 'right');
+assert.equal(fadeOverrides.contentHorizontalAlign, 'right');
+assert.equal(fadeOverrides.contentVerticalAlign, 'center');
 
 const manualFadeComposition = resolveSlideComposition({
   template: 'HERO',
@@ -170,6 +285,10 @@ assert.equal(manualFadeComposition.legacyTemplateId, 'HERO');
 const stackBoxTopImage = createImageConfigFromLayout('IMAGE_STACK_BOX_TOP', { url: 'https://example.com/image.png' });
 assert.equal(stackBoxTopImage?.type, 'IMAGE_BOX');
 assert.equal(stackBoxTopImage?.position, 'top');
+
+const stageTopImage = createImageConfigFromLayout('IMAGE_STAGE_TOP', { url: 'https://example.com/image.png' });
+assert.equal(stageTopImage?.type, 'IMAGE_BOX');
+assert.equal(stageTopImage?.position, 'top');
 
 const stackBoxBottomOverrides = createOptionOverridesFromImageLayout('IMAGE_STACK_BOX_BOTTOM');
 assert.equal(stackBoxBottomOverrides.contentHorizontalAlign, 'center');

@@ -10,11 +10,12 @@ import { CardRenderer } from "./blocks/CardRenderer";
 import { BadgeRenderer } from "./blocks/BadgeRenderer";
 import { BoxRenderer } from "./blocks/BoxRenderer";
 import { UserRenderer } from "./blocks/UserRenderer";
+import type { BlockRenderLayoutContext } from './block-layout-context';
 
 export function renderBlock(
   block: Block, 
   theme: Theme, 
-  onEditIcon?: (block: Block, index: number) => void, 
+  onEditIcon?: (block: Block, index: number, itemIndex?: number) => void, 
   isGridMember?: boolean, 
   indexInGrid?: number, 
   globalIndex?: number,
@@ -22,10 +23,8 @@ export function renderBlock(
     totalInGroup?: number;
     groupLayout?: 'auto' | 'row' | 'grid' | 'stack';
   },
-  layoutContext?: {
-    defaultWidthPercent?: number;
-    defaultTextAlign?: 'left' | 'center' | 'right';
-  }
+  layoutContext?: BlockRenderLayoutContext,
+  onSelectBlock?: (block: Block, index: number) => void,
 ) {
   const blockIdx = globalIndex ?? 0;
   const isTextualBlock = block.type === 'TITLE'
@@ -38,6 +37,16 @@ export function renderBlock(
     || (block.options?.align as 'left' | 'center' | 'right' | undefined)
     || (isTextualBlock ? layoutContext?.defaultTextAlign : undefined)
     || 'left';
+  const effectiveBlock = isTextualBlock && !block.options?.textAlign && !block.options?.align && layoutContext?.defaultTextAlign
+    ? {
+        ...block,
+        options: {
+          ...(block.options || {}),
+          align: layoutContext.defaultTextAlign,
+          textAlign: layoutContext.defaultTextAlign,
+        },
+      }
+    : block;
   const widthPercent = block.options?.widthPercent ?? layoutContext?.defaultWidthPercent;
   const shouldApplyWidth = widthPercent !== undefined && !Number.isNaN(widthPercent) && block.type !== 'SPACER' && block.type !== 'IMAGE';
   const isHeroStandaloneBox = block.type === 'BOX' && (boxGroupContext?.totalInGroup ?? 1) === 1;
@@ -60,23 +69,23 @@ export function renderBlock(
   const content = (() => {
     switch (block.type) {
       case "TITLE":
-        return <TitleRenderer block={block} theme={theme} />;
+        return <TitleRenderer block={effectiveBlock} theme={theme} />;
       case "PARAGRAPH":
-        return <ParagraphRenderer block={block} theme={theme} />;
+        return <ParagraphRenderer block={effectiveBlock} theme={theme} />;
       case "LIST":
-        return <ListRenderer block={block} theme={theme} />;
+        return <ListRenderer block={effectiveBlock} theme={theme} onEditIcon={(b, itemIndex) => onEditIcon?.(b, blockIdx, itemIndex)} layoutContext={layoutContext} />;
       case "SPACER":
         return <SpacerRenderer block={block} />;
       case "IMAGE":
         return <ImageRenderer block={block} />;
       case "CARD":
-        return <CardRenderer block={block} theme={theme} onEditIcon={(b) => onEditIcon?.(b, blockIdx)} />;
+        return <CardRenderer block={effectiveBlock} theme={theme} onEditIcon={(b) => onEditIcon?.(b, blockIdx)} />;
       case "BADGE":
-        return <BadgeRenderer block={block} theme={theme} />;
+        return <BadgeRenderer block={effectiveBlock} theme={theme} onEditIcon={(b) => onEditIcon?.(b, blockIdx)} layoutContext={layoutContext} />;
       case "BOX":
-        return <BoxRenderer block={block} theme={theme} isGridMember={isGridMember} indexInGrid={indexInGrid} totalInGroup={boxGroupContext?.totalInGroup} groupLayout={boxGroupContext?.groupLayout} onEditIcon={(b) => onEditIcon?.(b, blockIdx)} />;
+        return <BoxRenderer block={effectiveBlock} theme={theme} isGridMember={isGridMember} indexInGrid={indexInGrid} totalInGroup={boxGroupContext?.totalInGroup} groupLayout={boxGroupContext?.groupLayout} onEditIcon={(b) => onEditIcon?.(b, blockIdx)} layoutContext={layoutContext} globalIndex={blockIdx} />;
       case "USER":
-        return <UserRenderer block={block} theme={theme} />;
+        return <UserRenderer block={effectiveBlock} theme={theme} />;
       default:
         return null;
     }
@@ -87,6 +96,10 @@ export function renderBlock(
       style={wrapperStyle} 
       data-block-index={globalIndex} 
       className="render-block-wrapper"
+      onClick={onSelectBlock ? (event) => {
+        event.stopPropagation();
+        onSelectBlock(block, blockIdx);
+      } : undefined}
     >
       <div
         style={

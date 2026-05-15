@@ -26,6 +26,8 @@ type BrandingResponse = {
     font_destaque: string;
     profile_picture: string | null;
     instagram: string | null;
+    crm: string | null;
+    rqe: string | null;
     defaults: {
       bg: string;
       accent: string;
@@ -167,6 +169,8 @@ export const buildBrandingResponse = ({
       font_destaque: fontDestaque,
       profile_picture: client.profile_picture,
       instagram: client.instagram,
+      crm: client.crm,
+      rqe: client.rqe,
       defaults: {
         bg: brandTheme.background,
         accent: brandTheme.accent,
@@ -183,11 +187,13 @@ export const buildBrandingResponse = ({
   };
 };
 
-export const buildClientResponse = (client: Pick<ClientRow, 'id' | 'name' | 'profile_picture' | 'instagram'>) => ({
+export const buildClientResponse = (client: Pick<ClientRow, 'id' | 'name' | 'profile_picture' | 'instagram' | 'crm' | 'rqe'>) => ({
   id: client.id,
   name: client.name,
   profile_picture: client.profile_picture,
   instagram: client.instagram,
+  crm: client.crm,
+  rqe: client.rqe,
 });
 
 export const fetchBrandingResponse = async (): Promise<BrandingResponse> => {
@@ -219,7 +225,7 @@ export const fetchClientResponse = async (id: string) => {
   const supabaseServer = getSupabaseServer();
   const { data: client, error } = await supabaseServer
     .from('clients')
-    .select('id, name, profile_picture, instagram')
+    .select('id, name, profile_picture, instagram, crm, rqe')
     .eq('id', id)
     .single();
 

@@ -3,7 +3,8 @@ import React from 'react';
 import { Block, Theme } from '../../types';
 import * as Icons from 'lucide-react';
 import { quoteFontFamily } from '../../utils/branding';
-import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { getEmojiSizeForContext, renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { getIconScaleForContext } from '../../utils/icon-scale';
 import { fitTextToConstraint } from '../../utils/text-fit';
 
 interface CardRendererProps {
@@ -27,11 +28,12 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
   const textRef = React.useRef<HTMLDivElement>(null);
   const [availableBox, setAvailableBox] = React.useState({ width: 0, height: 0 });
 
-  const selectedFont = fontVariant === 'destaque' 
-    ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif') 
-    : theme.typography.fontFamily;
-  const resolvedFontSize = block.options?.fontSize || 30;
-  const resolvedLineHeight = block.options?.lineHeight ?? 1.3;
+  const selectedFont = block.options?.fontFamily
+    || (fontVariant === 'destaque'
+      ? (theme.typography.fontFamilySecondary || '"Instrument Serif", serif')
+      : theme.typography.fontFamily);
+  const resolvedFontSize = block.options?.fontSize || 32;
+  const resolvedLineHeight = block.options?.lineHeight ?? 1.24;
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
     availableWidth: availableBox.width || 640,
     availableHeight: availableBox.height || resolvedFontSize * resolvedLineHeight * 4,
@@ -44,11 +46,15 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
     minFontSize: Math.max(18, Math.round(resolvedFontSize * 0.78)),
     overflow: 'shrink',
     role: 'card',
+    mode: block.options?.lineBreakMode,
+    manualBreaks: block.options?.manualBreaks,
   }), [
     availableBox.height,
     availableBox.width,
     block.options?.fontWeight,
     block.options?.letterSpacing,
+    block.options?.lineBreakMode,
+    block.options?.manualBreaks,
     fontVariant,
     rawText,
     resolvedFontSize,
@@ -56,6 +62,11 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
     selectedFont,
   ]);
   const text = fitted.formatted;
+  const emojiSize = getEmojiSizeForContext('card');
+  const inlineHighlightBackgroundColor = block.options?.highlightBackgroundColor
+    || (block.options?.semanticRole === 'highlight' ? block.options?.backgroundColor : undefined)
+    || theme.colors.hlBgColor
+    || (isAccent ? '#fff' : theme.colors.accent);
 
   React.useEffect(() => {
     const target = textRef.current;
@@ -85,9 +96,10 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
     borderColor: isAccent ? 'transparent' : 'rgba(255,255,255,0.1)',
     borderWidth: '2px',
     color: textColor,
-    borderRadius: '40px',
+    borderRadius: '46px',
     textWrap: 'balance' as any,
-    fontFamily: safeFontFamily
+    fontFamily: safeFontFamily,
+    boxShadow: isAccent ? '0 24px 64px rgba(0,0,0,0.18)' : '0 16px 40px rgba(0,0,0,0.16)',
   };
 
   const renderRichContent = () => {
@@ -99,7 +111,7 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
           const split = part.split(/\[\[([\s\S]*?)\]\]/g);
           split.forEach((s, i) => {
             if (i % 2 === 1) {
-              newParts.push(<span key={`bg-hl-${i}`} className="inline px-3 py-1 rounded-lg mx-1 font-black" style={{ backgroundColor: theme.colors.hlBgColor || (isAccent ? '#fff' : theme.colors.accent), color: theme.colors.hlTextColor || '#000', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' as any, fontFamily: safeFontFamily }}>{renderEmojiText(s, `bg-hl-${i}`)}</span>);
+              newParts.push(<span key={`bg-hl-${i}`} className="inline px-3 py-1 rounded-lg mx-1 font-black" style={{ backgroundColor: inlineHighlightBackgroundColor, color: theme.colors.hlTextColor || '#000', WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' as any, fontFamily: safeFontFamily }}>{renderEmojiText(s, `bg-hl-${i}`, emojiSize)}</span>);
             } else if (s !== "") { newParts.push(s); }
           });
         } else { newParts.push(part); }
@@ -113,7 +125,7 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
           const split = part.split(new RegExp(`(${highlight})`, 'gi'));
           split.forEach((s, i) => {
             if (s.toLowerCase() === highlight.toLowerCase()) {
-              newParts.push(<span key={`hl-${i}`} className="font-black" style={{ color: isAccent ? '#000' : theme.colors.highlight, fontWeight: 900 }}>{renderEmojiText(s, `hl-${i}`)}</span>);
+              newParts.push(<span key={`hl-${i}`} className="font-black" style={{ color: isAccent ? '#000' : theme.colors.highlight, fontWeight: 900 }}>{renderEmojiText(s, `hl-${i}`, emojiSize)}</span>);
             } else if (s !== "") { newParts.push(s); }
           });
         } else { newParts.push(part); }
@@ -125,29 +137,33 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
       if (typeof part === 'string') {
         const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
-          if (i % 2 === 1) { finalParts.push(<span key={`bold-${i}`} className="font-black" style={{ fontWeight: 900 }}>{renderEmojiText(s, `bold-${i}`)}</span>); }
+          if (i % 2 === 1) { finalParts.push(<span key={`bold-${i}`} className="font-black" style={{ fontWeight: 900 }}>{renderEmojiText(s, `bold-${i}`, emojiSize)}</span>); }
           else if (s !== "") { finalParts.push(s); }
         });
       } else { finalParts.push(part); }
     });
-    return renderEmojiNodes(finalParts, 'card');
+    return renderEmojiNodes(finalParts, 'card', emojiSize);
   };
 
   const renderIcon = () => {
+    const renderSize = Math.max(
+      84,
+      Math.round(resolvedFontSize * (getIconScaleForContext('card') + 0.1)),
+    );
     if (customIcon) {
-       if (customIcon.startsWith('<svg')) return (<div className="w-12 h-12 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: customIcon }} style={{ color: isAccent ? textColor : theme.colors.accent }} />);
-       if (customIcon.startsWith('http') || customIcon.startsWith('data:image')) return <img src={customIcon} className="w-12 h-12 object-contain rounded-md" alt="icon" />;
+       if (customIcon.startsWith('<svg')) return (<div className="flex items-center justify-center" dangerouslySetInnerHTML={{ __html: customIcon }} style={{ width: renderSize, height: renderSize, color: isAccent ? textColor : theme.colors.accent }} />);
+       if (customIcon.startsWith('http') || customIcon.startsWith('data:image')) return <img src={customIcon} className="object-contain rounded-md" alt="icon" style={{ width: renderSize, height: renderSize }} />;
        const IconFromCustom = (Icons as any)[customIcon];
-       if (IconFromCustom) return <IconFromCustom size={48} strokeWidth={2} />;
+       if (IconFromCustom) return <IconFromCustom size={renderSize} strokeWidth={2.35} />;
     }
     const targetIconName = iconName || (variant === 'accent' || variant === 'default' ? 'Zap' : 'CircleDot');
     const IconComponent = (Icons as any)[targetIconName];
-    if (IconComponent) return <IconComponent size={48} strokeWidth={2} />;
+    if (IconComponent) return <IconComponent size={renderSize} strokeWidth={2.35} />;
     return null;
   };
 
   return (
-    <div className="relative flex items-center gap-8 p-10 w-full transition-all shadow-lg hover:translate-y-[-4px]" style={containerStyles}>
+    <div className="relative flex items-center gap-10 p-12 w-full transition-all shadow-lg hover:translate-y-[-4px]" style={containerStyles}>
       <div onClick={() => onEditIcon?.(block)} className="group relative cursor-pointer shrink-0">
         <div className="opacity-80 group-hover:opacity-100 transition-opacity" style={{ color: isAccent ? textColor : theme.colors.accent }}>{renderIcon()}</div>
         <div className="absolute inset-[-10px] bg-brand/20 border-2 border-brand rounded-xl opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center scale-90 group-hover:scale-100">
@@ -158,7 +174,7 @@ export function CardRenderer({ block, theme, onEditIcon }: CardRendererProps) {
         ref={textRef}
         className={`flex-1 ${hasBgHighlight ? '!leading-[1.7]' : '!leading-[1.3]'} tracking-tight`} 
         style={{ 
-          fontWeight: block.options?.fontWeight || (fontVariant === 'destaque' ? 400 : 300),
+          fontWeight: Math.max(Number(block.options?.fontWeight || (fontVariant === 'destaque' ? 400 : 300)), 500),
           fontSize: `${fitted.effectiveFontSize}px`,
           lineHeight: resolvedLineHeight,
           whiteSpace: 'pre-line',

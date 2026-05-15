@@ -21,6 +21,9 @@ export type TextFitResult = {
   quality: number;
 };
 
+const NBSP = '\u00A0';
+const BREAKABLE_WHITESPACE_PATTERN = /[ \t\r\n]+/;
+
 const normalizeText = (value: string) =>
   value
     .replace(/\r\n/g, '\n')
@@ -32,21 +35,18 @@ const normalizeText = (value: string) =>
 const stripMeasurementMarkers = (value: string) =>
   value.replace(/\[\[|\]\]|\*\*/g, '');
 
-const getHighlightPaddingCompensation = (constraint: TextConstraint) => {
-  switch (constraint.role) {
-    case 'title':
-      return 44;
-    case 'box':
-      return 40;
-    case 'badge':
-      return 28;
-    case 'card':
-      return 32;
-    case 'paragraph':
-      return 30;
-    default:
-      return 24;
-  }
+const getBreakableWords = (value: string) =>
+  value.trim().split(BREAKABLE_WHITESPACE_PATTERN).filter(Boolean);
+
+const protectLeadingShortTitleWord = (value: string) => {
+  const words = getBreakableWords(value);
+  if (words.length < 2) return value;
+
+  const leadingWord = words[0]?.replace(/\[\[|\]\]|\*\*/g, '') || '';
+  if (leadingWord.length !== 1) return value;
+
+  const [first, second, ...rest] = words;
+  return [`${first}${NBSP}${second}`, ...rest].join(' ');
 };
 
 const measureLineWidth = (
@@ -63,7 +63,7 @@ const measureLineWidth = (
   });
 
   if (value.includes('[[') || value.includes(']]')) {
-    return measuredWidth + getHighlightPaddingCompensation(constraint);
+    return measuredWidth + Math.round(fontSize * 0.5);
   }
 
   return measuredWidth;
@@ -73,6 +73,29 @@ const hasTrailingOrphan = (lines: string[]) => {
   if (lines.length < 2) return false;
   const lastLineWords = lines[lines.length - 1]?.trim().split(/\s+/).filter(Boolean) || [];
   return lastLineWords.length === 1;
+};
+
+const hasAnySingleWordLine = (lines: string[]) => {
+  if (lines.length < 2) return false;
+  return lines.some((line) => line.trim().split(/\s+/).filter(Boolean).length === 1);
+};
+
+const hasUndesirableSingleWordLine = (
+  lines: string[],
+  constraint: TextConstraint,
+) => {
+  if (constraint.mode === 'manual') return false;
+
+  switch (constraint.role) {
+    case 'title':
+    case 'badge':
+    case 'box':
+    case 'card':
+      return hasAnySingleWordLine(lines);
+    case 'paragraph':
+    default:
+      return hasTrailingOrphan(lines);
+  }
 };
 
 const rebalanceShortTrailingLines = (
@@ -128,7 +151,7 @@ const getGreedyLinesForSegment = (
   constraint: TextConstraint,
   measurer: TextMeasurer,
 ): string[] => {
-  const words = segment.trim().split(/\s+/).filter(Boolean);
+  const words = getBreakableWords(segment);
   if (words.length === 0) return [''];
 
   const lines: string[] = [];
@@ -174,7 +197,7 @@ const getBalancedLines = (
     return segments.flatMap((segment) => getBalancedLines(segment, fontSize, constraint, measurer));
   }
 
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = getBreakableWords(text);
   if (words.length <= 2) return [text];
 
   const bestFromGreedy = getGreedyLines(text, fontSize, constraint, measurer);
@@ -246,7 +269,7 @@ const evaluateQuality = (
     fontFamily: constraint.fontFamily,
     fontWeight: constraint.fontWeight,
     letterSpacing: constraint.letterSpacing,
-  }) + ((line.includes('[[') || line.includes(']]')) ? getHighlightPaddingCompensation(constraint) : 0));
+  }) + ((line.includes('[[') || line.includes(']]')) ? Math.round(fontSize * 0.5) : 0));
 
   const avgWidth = measuredWidths.reduce((sum, width) => sum + width, 0) / measuredWidths.length;
   let score = 100;
@@ -285,17 +308,31 @@ export const fitTextToConstraint = (
   constraint: TextConstraint,
   measurer: TextMeasurer = textMeasurer,
 ): TextFitResult => {
-  const normalized = normalizeText(text);
+  const normalized = constraint.mode === 'manual'
+    ? normalizeText(text)
+    : normalizeText(text.replace(/\r?\n/g, ' '));
   const overflow = constraint.overflow || 'shrink';
   const minFontSize = constraint.minFontSize || Math.max(12, constraint.fontSize * 0.6);
 
+  const normalizedForFit = constraint.role === 'title' && constraint.mode !== 'manual'
+    ? protectLeadingShortTitleWord(normalized)
+    : normalized;
+
+  // Non-title copy keeps a small guard against font-loading measurement drift. Titles are
+  // already manually bounded by the image frame, so shrinking their width here causes early wraps.
+  const widthSafetyScale = constraint.role === 'title' ? 1 : 0.98;
+  const safeConstraint: TextConstraint = {
+    ...constraint,
+    availableWidth: Math.max(100, Math.floor(constraint.availableWidth * widthSafetyScale)),
+  };
+
   const tryFit = (fontSize: number): TextFitResult => {
     const shouldBalance = constraint.role === 'title' || constraint.role === 'badge' || constraint.role === 'box';
-    const lines = constraint.mode === 'manual' && constraint.manualBreaks
-      ? getManualLines(constraint.manualBreaks)
+    const lines = constraint.mode === 'manual'
+      ? getManualLines(constraint.manualBreaks || text)
       : shouldBalance
-        ? getBalancedLines(normalized, fontSize, constraint, measurer)
-        : getGreedyLines(normalized, fontSize, constraint, measurer);
+        ? getBalancedLines(normalizedForFit, fontSize, safeConstraint, measurer)
+        : getGreedyLines(normalizedForFit, fontSize, safeConstraint, measurer);
 
     return {
       lines,
@@ -308,7 +345,7 @@ export const fitTextToConstraint = (
   };
 
   let result = tryFit(constraint.fontSize);
-  if (doesFit(result.lines, result.effectiveFontSize, constraint, measurer) && !hasTrailingOrphan(result.lines)) {
+  if (doesFit(result.lines, result.effectiveFontSize, constraint, measurer) && !hasUndesirableSingleWordLine(result.lines, constraint)) {
     return result;
   }
 
@@ -316,9 +353,9 @@ export const fitTextToConstraint = (
     return result;
   }
 
-  for (let size = constraint.fontSize - 2; size >= minFontSize; size -= 2) {
+  for (let size = constraint.fontSize - 1; size >= minFontSize; size -= 1) {
     const attempt = tryFit(size);
-    if (doesFit(attempt.lines, attempt.effectiveFontSize, constraint, measurer) && !hasTrailingOrphan(attempt.lines)) {
+    if (doesFit(attempt.lines, attempt.effectiveFontSize, constraint, measurer) && !hasUndesirableSingleWordLine(attempt.lines, constraint)) {
       return attempt;
     }
     result = attempt;

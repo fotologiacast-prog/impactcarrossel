@@ -2,13 +2,21 @@
 import React from 'react';
 import { Block, Theme } from '../../types';
 import { quoteFontFamily } from '../../utils/branding';
-import { renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
+import { getEmojiSizeForContext, renderEmojiNodes, renderEmojiText } from '../../utils/emoji';
 import { fitTextToConstraint } from '../../utils/text-fit';
 
 interface TitleRendererProps {
   block: Block;
   theme: Theme;
 }
+
+const resolveSemanticColor = (color: string | undefined, theme: Theme) => {
+  if (color === 'accent') return theme.colors.accent;
+  if (color === 'highlight') return theme.colors.highlight;
+  if (color === 'text') return theme.colors.textPrimary;
+  if (color === 'muted') return theme.colors.textSecondary;
+  return color;
+};
 
 export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const rawText = Array.isArray(block.content) ? block.content.join(' ') : (block.content || '') as string;
@@ -22,21 +30,24 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
   const [availableWidth, setAvailableWidth] = React.useState(0);
 
   const sizeClasses = {
-    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.28]' : 'leading-[1.14]'}`,
-    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.22]' : 'leading-[1.04]'}`,
-    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.08]' : 'leading-[0.9]'}`
+    sm: `text-[64px] font-black tracking-tight ${hasBgHighlight ? 'leading-[1.44]' : 'leading-[1.14]'}`,
+    md: `${theme.typography.title} ${hasBgHighlight ? 'leading-[1.34]' : 'leading-[1.04]'}`,
+    lg: `text-[180px] font-[1000] tracking-[-0.08em] ${hasBgHighlight ? 'leading-[1.18]' : 'leading-[0.9]'}`
   };
 
-  const selectedFont = fontVariant === 'destaque' 
-    ? (theme.typography.fontFamilySecondary || theme.typography.fontFamily) 
-    : theme.typography.fontFamily;
+  const selectedFont = block.options?.fontFamily && block.options.fontFamily !== 'serif'
+    ? block.options.fontFamily
+    : fontVariant === 'destaque'
+      ? (theme.typography.fontFamilySecondary || theme.typography.fontFamily)
+      : theme.typography.fontFamily;
   const usingDedicatedSecondaryFont = fontVariant === 'destaque' && selectedFont !== theme.typography.fontFamily;
   const defaultFontWeight = (usingDedicatedSecondaryFont || isSerifLegacy || selectedFont.includes('Serif') || selectedFont.includes('Playfair')) ? 400 : 900;
   const resolvedFontSize = block.options?.fontSize || (size === 'sm' ? 64 : size === 'lg' ? 180 : 80);
-  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? (hasBgHighlight ? 1.28 : 1.14) : size === 'lg' ? (hasBgHighlight ? 1.08 : 0.9) : (hasBgHighlight ? 1.22 : 1.04));
+  const resolvedLineHeight = block.options?.lineHeight ?? (size === 'sm' ? (hasBgHighlight ? 1.44 : 1.14) : size === 'lg' ? (hasBgHighlight ? 1.18 : 0.9) : (hasBgHighlight ? 1.34 : 1.04));
   const titleMaxLines = size === 'lg' ? 3 : 4;
+  const disableAutoFit = block.options?.disableAutoFit === true;
   const fitted = React.useMemo(() => fitTextToConstraint(rawText, {
-    availableWidth: availableWidth || 840,
+    availableWidth: availableWidth || 960,
     availableHeight: resolvedFontSize * resolvedLineHeight * titleMaxLines,
     fontSize: resolvedFontSize,
     fontFamily: selectedFont,
@@ -45,20 +56,28 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
     letterSpacing: block.options?.letterSpacing,
     maxLines: titleMaxLines,
     minFontSize: Math.max(32, Math.round(resolvedFontSize * 0.7)),
-    overflow: 'shrink',
+    overflow: disableAutoFit ? 'reflow' : 'shrink',
     role: 'title',
+    mode: block.options?.lineBreakMode,
+    manualBreaks: block.options?.manualBreaks,
   }), [
     availableWidth,
     block.options?.fontWeight,
     block.options?.letterSpacing,
+    block.options?.lineBreakMode,
+    block.options?.manualBreaks,
     defaultFontWeight,
+    disableAutoFit,
     rawText,
     resolvedFontSize,
     resolvedLineHeight,
     selectedFont,
     titleMaxLines,
   ]);
-  const text = fitted.formatted;
+  const effectiveText = disableAutoFit ? rawText : fitted.formatted;
+  const effectiveFontSize = disableAutoFit ? resolvedFontSize : fitted.effectiveFontSize;
+  const text = effectiveText;
+  const emojiSize = getEmojiSizeForContext('title');
 
   React.useEffect(() => {
     const target = elementRef.current;
@@ -75,15 +94,18 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
 
   // Ensure font family is quoted if it's not already a generic family or complex string
   const safeFontFamily = quoteFontFamily(selectedFont, theme.typography.fontFamily);
+  const highlightBackgroundColor = resolveSemanticColor(block.options?.highlightBackgroundColor || block.options?.backgroundColor, theme)
+    || theme.colors.hlBgColor
+    || theme.colors.accent;
 
   const style: React.CSSProperties = { 
-    color: block.options?.color || theme.colors.textPrimary,
+    color: resolveSemanticColor(block.options?.color, theme) || theme.colors.textPrimary,
     textWrap: 'balance' as any,
     letterSpacing: block.options?.letterSpacing !== undefined ? `${block.options.letterSpacing}px` : undefined,
     textAlign: block.options?.textAlign || (block.options?.align as any) || 'left',
     fontFamily: isSerifLegacy ? '"Instrument Serif", serif' : safeFontFamily,
     fontWeight: block.options?.fontWeight || defaultFontWeight,
-    fontSize: `${fitted.effectiveFontSize}px`,
+    fontSize: `${effectiveFontSize}px`,
     lineHeight: resolvedLineHeight,
     width: '100%'
   };
@@ -102,16 +124,17 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
               newParts.push(
                 <span 
                   key={`bg-hl-${i}`} 
-                  className="inline px-6 py-1 rounded-2xl mx-1 font-black"
+                  className="inline px-6 py-[0.12em] rounded-2xl mx-1 font-black"
                   style={{ 
-                    backgroundColor: theme.colors.hlBgColor || theme.colors.accent,
+                    backgroundColor: highlightBackgroundColor,
                     color: theme.colors.hlTextColor || '#000',
                     WebkitBoxDecorationBreak: 'clone',
                     boxDecorationBreak: 'clone' as any,
-                    fontFamily: safeFontFamily
+                    fontFamily: safeFontFamily,
+                    lineHeight: 1.04,
                   }}
                 >
-                  {renderEmojiText(s, `bg-hl-${i}`, '1.08em')}
+                  {renderEmojiText(s, `bg-hl-${i}`, emojiSize)}
                 </span>
               );
             } else if (s !== "") {
@@ -133,7 +156,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
           const split = part.split(new RegExp(`(${highlight})`, 'gi'));
           split.forEach((s, i) => {
             if (s.toLowerCase() === highlight.toLowerCase()) {
-              newParts.push(<span key={`hl-${i}`} style={{ color: theme.colors.highlight }}>{renderEmojiText(s, `hl-${i}`, '1.08em')}</span>);
+              newParts.push(<span key={`hl-${i}`} style={{ color: theme.colors.highlight }}>{renderEmojiText(s, `hl-${i}`, emojiSize)}</span>);
             } else if (s !== "") {
               newParts.push(s);
             }
@@ -152,7 +175,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
         const split = part.split(/\*\*([\s\S]*?)\*\*/g);
         split.forEach((s, i) => {
           if (i % 2 === 1) {
-            finalParts.push(<span key={`bold-${i}`} className="font-black">{renderEmojiText(s, `bold-${i}`, '1.08em')}</span>);
+            finalParts.push(<span key={`bold-${i}`} className="font-black">{renderEmojiText(s, `bold-${i}`, emojiSize)}</span>);
           } else if (s !== "") {
             finalParts.push(s);
           }
@@ -162,7 +185,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
       }
     });
 
-    return renderEmojiNodes(finalParts, 'title', '1.08em');
+    return renderEmojiNodes(finalParts, 'title', emojiSize);
   };
 
   if (variant === 'oval') {
@@ -174,6 +197,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
               className={`w-full ${sizeClasses[size as keyof typeof sizeClasses]} uppercase relative z-10 italic`} 
               style={{ ...style, textAlign: 'center', whiteSpace: 'pre-line', textWrap: undefined }}
               data-block-type="TITLE"
+              data-text-fit-disabled={disableAutoFit ? 'true' : undefined}
             >
               {renderRichText(text)}
             </h1>
@@ -187,6 +211,7 @@ export function TitleRenderer({ block, theme }: TitleRendererProps) {
       className={`w-full ${sizeClasses[size as keyof typeof sizeClasses]}`} 
       style={{ ...style, whiteSpace: 'pre-line', textWrap: undefined }}
       data-block-type="TITLE"
+      data-text-fit-disabled={disableAutoFit ? 'true' : undefined}
     >
       {renderRichText(text)}
     </h1>

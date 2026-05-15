@@ -41,17 +41,17 @@ const resolvedPresetTheme = createBrandThemeFromPreset(
 
 assert.equal(presetTheme.paletteId, 'preset-1');
 assert.deepEqual(presetTheme.colors, ['#101010', '#F4F4F4', '#FF0055']);
-assert.equal(presetTheme.background, '#101010');
-assert.equal(presetTheme.accent, '#ff0055');
-assert.equal(presetTheme.white, '#F5F3EE');
+assert.equal(presetTheme.background, '#efefef');
+assert.equal(presetTheme.accent, '#FF0055');
+assert.equal(presetTheme.white, '#efefef');
 assert.equal(presetTheme.black, '#141414');
-assert.equal(presetTheme.text, '#F5F3EE');
+assert.equal(presetTheme.text, '#141414');
 assert.equal(presetTheme.cardTextColor, getContrastTextColor(presetTheme.cardBg));
 assert.equal(presetTheme.hlTextColor, getContrastTextColor(presetTheme.hlBgColor));
 assert.equal(resolvedPresetTheme.fontPadrão, 'Merriweather Regular');
 assert.equal(resolvedPresetTheme.fontDestaque, 'Oswald');
 
-assert.equal(getContrastTextColor('#111111'), '#F5F3EE');
+assert.equal(getContrastTextColor('#111111'), '#efefef');
 assert.equal(getContrastTextColor('#F5F5F5'), '#141414');
 assert.deepEqual(getBrandPaletteSwatches(presetTheme).slice(0, 3), ['#101010', '#F4F4F4', '#FF0055']);
 
@@ -65,7 +65,7 @@ const mergedDark = mergeSlideOptionsWithBrandTheme(
   {},
 );
 
-assert.equal(mergedDark.text, '#F5F3EE');
+assert.equal(mergedDark.text, '#efefef');
 assert.equal(mergedDark.cardBg, '#ff0055');
 assert.equal(mergedDark.cardTextColor, getContrastTextColor('#ff0055'));
 
@@ -179,7 +179,7 @@ const brandedCarousel = carouselSchema.parse({
     accent: '#ff0055',
     fontPadrão: 'Inter',
     fontDestaque: 'Playfair Display',
-    white: '#F5F3EE',
+    white: '#efefef',
     black: '#141414',
   },
 });
@@ -190,7 +190,17 @@ assert.equal(brandedCarousel.projectFX?.noiseAmount, 0.22);
 
 const clientSyncedSlide = applyProjectClientToSlide(
   {
-    template: 'SOCIAL_CHECKLIST',
+    template: 'CHECKLIST',
+    contentTemplate: 'CHECKLIST',
+    cover: {
+      variant: 'COVER_HIERARCHY_HERO',
+      profile: {},
+      text: {
+        titleMain: 'Impact Doctor',
+      },
+      images: {},
+      effects: {},
+    },
     blocks: [
       {
         type: 'USER',
@@ -211,6 +221,8 @@ const clientSyncedSlide = applyProjectClientToSlide(
     name: 'Impact Doctor',
     instagram: 'impactdoctor',
     profilePicture: 'https://example.com/new.jpg',
+    crm: '12345',
+    rqe: '6789',
   },
 );
 
@@ -218,6 +230,10 @@ assert.equal(clientSyncedSlide.blocks[0].type, 'USER');
 assert.equal(clientSyncedSlide.blocks[0].content, 'Impact Doctor');
 assert.equal(clientSyncedSlide.blocks[0].options?.handle, '@impactdoctor');
 assert.equal(clientSyncedSlide.blocks[0].options?.avatar, 'https://example.com/new.jpg');
+assert.equal(clientSyncedSlide.cover?.profile.displayName, 'Impact Doctor');
+assert.equal(clientSyncedSlide.cover?.profile.handle, '@impactdoctor');
+assert.equal(clientSyncedSlide.cover?.profile.avatar, 'https://example.com/new.jpg');
+assert.equal(clientSyncedSlide.cover?.profile.meta, 'CRM 12345 | RQE 6789');
 
 const migratedSlides = applyBrandThemeToSlides(
   [
@@ -258,7 +274,9 @@ console.log('branding.test.ts passed');
 const appearanceCarousel = carouselSchema.parse({
   slides: [
     {
-      template: 'FADE',
+      template: 'HERO',
+      contentTemplate: 'HERO',
+      imageLayout: 'IMAGE_FADE_RIGHT',
       image: {
         type: 'IMAGE_BACKGROUND',
       },
@@ -294,7 +312,8 @@ const appearanceCarousel = carouselSchema.parse({
   },
 });
 
-assert.equal(appearanceCarousel.slides[0].template, 'FADE');
+assert.equal(appearanceCarousel.slides[0].template, 'HERO');
+assert.equal(appearanceCarousel.slides[0].imageLayout, 'IMAGE_FADE_RIGHT');
 assert.equal(appearanceCarousel.slides[0].options?.fadeSide, 'right');
 assert.equal(appearanceCarousel.slides[0].options?.fadeStrength, 0.55);
 assert.equal(appearanceCarousel.slides[0].options?.fadeBlur, 14);
